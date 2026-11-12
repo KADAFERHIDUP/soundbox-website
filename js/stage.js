@@ -72,14 +72,11 @@ export function createStage(canvas, { onProgress } = {}) {
   // ukuran tombol, earcup mengapit tombol, dan posisinya ikut tombol saat halaman di-scroll.
   function applyAnchor(p) {
     if (!(p.anchor >= 0.5) || !anchorFn || !model) return false;
-    const a = anchorFn(); if (!a) return false;
-    const u = model.userData, hpx = innerHeight;
-    const ppu = Math.min(1.5 * a.r / u.cupH, 0.58 * hpx);           // px per satuan model (tinggi model = 1); earcup setinggi 3/4 tombol
-    p.size = ppu / hpx;
-    const off = a.r * 2.1 + u.cupHalfW * ppu;                         // tengah earcup dari tengah tombol, sisa ruang untuk gelombang
-    p.wide = Math.min(3, Math.max(1, off / (u.cupDist * ppu)));
-    p.x = (a.cx - innerWidth / 2) / innerWidth;
-    p.y = -(a.cy - hpx / 2) / hpx - u.cupY * p.size;
+    const a = anchorFn(); if (!a) return false;   // { x, y: tengah earcup di layar (px), ppu: px per tinggi model, wide }
+    p.size = a.ppu / innerHeight;
+    p.wide = a.wide;
+    p.x = (a.x - innerWidth / 2) / innerWidth;
+    p.y = -(a.y - innerHeight / 2) / innerHeight - model.userData.cupY * p.size;
     return true;
   }
   const _v = new THREE.Vector3(), _b = new THREE.Box3();
@@ -150,6 +147,7 @@ export function createStage(canvas, { onProgress } = {}) {
     pose(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; tgt.anchor = p.anchor || 0; },
     jump(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; tgt.anchor = p.anchor || 0; if (!applyAnchor(tgt)) applyFit(tgt); Object.assign(cur, tgt); },
     setAnchor(fn) { anchorFn = fn; },
+    metrics() { return model ? model.userData : null; },
     cups,
     setSpin(v) { spin = v; },
     addYaw(d) { spinAngle += d; },

@@ -353,13 +353,7 @@ async function start3D() {
   stage.setVariant(V().colors, false);
   stage.jump({ ...POSES[mobile.matches ? 'mobile' : 'desk'].hero, light: 0 });
   await stage.ready;
-  // headphone di bagian pre-order menempel ke tombol: posisi dari layout (tanpa geseran whip), ukuran dari lebar tombol
-  stage.setAnchor(() => {
-    if (shown !== 'preorder') return null;
-    const b = $('.po-disc'); if (!b || !b.offsetWidth) return null;
-    const r = b.getBoundingClientRect(), m = $('main').getBoundingClientRect();
-    return { cx: r.left + r.width / 2 - m.left, cy: r.top + r.height / 2, r: b.offsetWidth / 2 };
-  });
+  stage.setAnchor(() => (shown === 'preorder' ? poGeom() : null));
   window.__soundbox = { stage };
   document.body.classList.add('has3d');
   choreograph();
@@ -392,37 +386,54 @@ function setupDrag() {
 }
 
 /* ---------------- animasi kanvas 2D ---------------- */
+/* Komposisi pre-order: tombol hitam di tengah, earcup mengapitnya, gelombang suara menyambung keduanya.
+   Semua ukuran diturunkan dari ukuran tombol, dan posisi ketiganya dihitung dari kotak bagian #preorder
+   pada frame yang sama, jadi saat di-scroll tidak ada yang tertinggal. */
+function poGeom() {
+  const sec = $('#preorder'), disc = $('.po-disc');
+  const r = sec.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
+  const ring = vw <= 760 ? 6 : 8, rv = disc.offsetWidth / 2 + ring;        // jari-jari tombol termasuk cincin
+  const m = stage && document.body.classList.contains('has3d') ? stage.metrics() : null;
+  const shift = $('main').getBoundingClientRect().left;                     // geseran whip
+  const g = { cx: r.left + r.width / 2, x: r.left + r.width / 2 - shift, y: r.top + r.height / 2, rv, half: rv * 3.1, cup: 0, ppu: 0, wide: 1 };
+  if (m) {
+    const WIDE = 1.75, GAP = 0.95;                                          // headband sedikit dilebarkan; jarak tombol–earcup hampir satu jari-jari untuk gelombang
+    let ppu = rv * (1 + GAP) / (WIDE * m.cupDist - m.cupHalfW);
+    ppu = Math.min(ppu, vh * 0.56, vw * 0.36 / (WIDE * m.cupDist + m.cupHalfW));
+    const off = Math.max(rv * 1.25 + m.cupHalfW * ppu, WIDE * m.cupDist * ppu);
+    g.ppu = ppu; g.wide = off / (m.cupDist * ppu);
+    g.half = off - m.cupHalfW * ppu * 0.5;                                  // ujung gelombang masuk sedikit ke bantalan
+    g.y += -m.cupY * ppu * 0.5;                                             // headband di atas, jadi grup diturunkan supaya seimbang di tengah
+  }
+  return g;
+}
 function setupWaves() {
-  const c = $('#waves'), g = c.getContext('2d'); let on = false, raf = 0, baseLeft = 0, baseTop = 0, wx0 = null, wx1 = null, wcy = null;
-  const io = new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on && !raf) raf = requestAnimationFrame(draw); });
-  io.observe(c);
-  function draw(now) {
-    raf = on ? requestAnimationFrame(draw) : 0;
-    const dpr = Math.min(devicePixelRatio || 1, 2), w = c.clientWidth, h = c.clientHeight;
-    if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
+  const po = $('#po-center'), c = $('#waves'), g = c.getContext('2d');
+  let cw = 0, ch = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const sec = $('#preorder').getBoundingClientRect();
+    const on = sec.bottom > -40 && sec.top < innerHeight + 40 && sec.right > 0 && sec.left < innerWidth;
+    po.classList.toggle('on', on);
+    if (!on) return;
+    const G = poGeom();
+    po.style.transform = `translate3d(${(G.cx - innerWidth / 2).toFixed(1)}px, ${(G.y - innerHeight / 2).toFixed(1)}px, 0)`;
+    const w = Math.ceil(G.half * 2 + 8), h = Math.ceil(G.rv * 2.2), dpr = Math.min(devicePixelRatio || 1, 2);
+    if (w !== cw || h !== ch) { cw = w; ch = h; c.style.width = w + 'px'; c.style.height = h + 'px'; c.width = w * dpr; c.height = h * dpr; }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-    // ujung gelombang menempel ke sisi dalam kedua earcup (kalau 3D aktif), selain itu 20%–80% lebar
-    let tx0 = w * 0.2, tx1 = w * 0.8, tcy = h / 2;
-    const cups = stage && document.body.classList.contains('has3d') ? stage.cups() : null;
-    if (!document.body.classList.contains('whipping')) baseLeft = c.getBoundingClientRect().left, baseTop = c.getBoundingClientRect().top;
-    if (cups && cups.length === 2 && cups[1].x0 - cups[0].x1 > 80) {
-      const ovL = (cups[0].x1 - cups[0].x0) * 0.22, ovR = (cups[1].x1 - cups[1].x0) * 0.22;   // masuk sedikit ke bantalan earcup
-      tx0 = cups[0].x1 - ovL - baseLeft; tx1 = cups[1].x0 + ovR - baseLeft;
-    }
-    const kk = wx0 == null ? 1 : 0.2;
-    wx0 = wx0 == null ? tx0 : wx0 + (tx0 - wx0) * kk; wx1 = wx1 == null ? tx1 : wx1 + (tx1 - wx1) * kk; wcy = wcy == null ? tcy : wcy + (tcy - wcy) * kk;
-    const t = calm.matches ? 0 : now / 1000, lines = 26, x0 = wx0, x1 = wx1;
+    const t = calm.matches ? 0 : now / 1000, lines = 26, x0 = 4, x1 = w - 4;
     for (let i = 0; i < lines; i++) {
       const p = i / (lines - 1);
       g.beginPath();
-      for (let x = x0; x <= x1; x += 6) {
+      for (let x = x0; x <= x1; x += 4) {
         const u = (x - x0) / (x1 - x0), env = Math.sin(u * Math.PI);
-        const y = wcy + env * (Math.sin(u * 9 + t * 1.3 + p * 2.2) * h * 0.22 + Math.sin(u * 4 - t * 0.7 + p * 5) * h * 0.12) * (0.4 + p * 0.6);
+        const y = h / 2 + env * (Math.sin(u * 9 + t * 1.3 + p * 2.2) * h * 0.2 + Math.sin(u * 4 - t * 0.7 + p * 5) * h * 0.11) * (0.4 + p * 0.6);
         x === x0 ? g.moveTo(x, y) : g.lineTo(x, y);
       }
       g.strokeStyle = `rgba(47, 91, 60, ${0.25 + p * 0.45})`; g.lineWidth = 0.9; g.stroke();
     }
   }
+  requestAnimationFrame(frame);
 }
 function setupEq() {
   const c = $('#eq'), g = c.getContext('2d'); let on = false, raf = 0;

@@ -277,10 +277,6 @@
     <!-- 10. PRE-ORDER -->
     <section class="scene preorder" id="preorder" data-scene="preorder" data-word="hype">
       <p class="mono quote">// Ini bukan revolusi, tapi bukti bahwa modularitas bisa terjadi, dan bisa terjadi dengan cara yang paling sederhana.</p>
-      <canvas class="waves" id="waves" aria-hidden="true"></canvas>
-      <button class="po-disc" type="button" data-open="preorder" aria-label="Buka form pre-order">
-        <span class="script">pre</span><span class="po-word">order</span>
-      </button>
       <p class="mono po-meta">// <span data-ship></span> produksi<br>// bayar penuh di muka</p>
       <div class="po-bar">
         <div class="po-price"><span class="mono">// harga<b>.</b></span><strong data-price-short></strong></div>
@@ -292,6 +288,14 @@
       <p class="sr-only">Pre-order dibuka. Harga mulai <span data-price-text></span>.</p>
     </section>
   </main>
+
+  <!-- tombol pre-order + gelombang suara: satu grup yang digerakkan bersama headphone 3D tiap frame -->
+  <div class="po-center" id="po-center">
+    <canvas class="waves" id="waves" aria-hidden="true"></canvas>
+    <button class="po-disc" type="button" data-open="preorder" aria-label="Buka form pre-order">
+      <span class="script">pre</span><span class="po-word">order</span>
+    </button>
+  </div>
 
   <footer class="foot">
     <div class="foot-grid">
