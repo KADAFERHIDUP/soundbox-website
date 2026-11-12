@@ -87,7 +87,10 @@ export async function loadHeadphone(mats, onProgress) {
   const size = all.getSize(new THREE.Vector3()), center = all.getCenter(new THREE.Vector3());
   // tiap mesh dikelompokkan: headband (tengah) dan earcup kiri/kanan, diukur dari titik tengah model
   const bandG = new THREE.Group(), cupG = { '-1': new THREE.Group(), '1': new THREE.Group() };
-  bandG.position.set(0, 0, center.z);
+  // titik putar headband = ujung bawahnya (tempat menyambung ke earcup), supaya saat diperbesar ujungnya tetap menempel
+  const bandBox = new THREE.Box3();
+  for (const m of meshes) { const pt = partOf(m.name); if (pt === 'band' || pt === 'pad') bandBox.union(new THREE.Box3().setFromObject(m)); }
+  bandG.position.set((bandBox.min.x + bandBox.max.x) / 2, bandBox.min.y, center.z);
   flat.add(bandG, cupG[-1], cupG[1]); flat.updateMatrixWorld(true);
   const cupBox = new THREE.Box3();
   for (const m of meshes) {
@@ -116,7 +119,8 @@ export async function loadHeadphone(mats, onProgress) {
   holder.userData.setWide = f => {
     if (Math.abs(f - wideNow) < 1e-4) return;
     wideNow = f;
-    bandG.scale.z = f;
+    // headband diperbesar proporsional (lebar dan tinggi), bukan ditarik ke samping saja, jadi lengkungannya tidak gepeng
+    bandG.scale.set(1 + (f - 1) * 0.45, f, f);
     cupG[-1].position.z = -(f - 1) * d;
     cupG[1].position.z = (f - 1) * d;
   };

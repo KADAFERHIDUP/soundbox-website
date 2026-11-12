@@ -391,19 +391,22 @@ function setupDrag() {
    Ukuran tombol dan gelombang diturunkan dari ukuran headphone, dan posisi ketiganya dihitung dari kotak
    bagian #preorder pada frame yang sama, jadi saat di-scroll tidak ada yang tertinggal. */
 function poGeom() {
-  const r = $('#preorder').getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
+  const r = $('#preorder').getBoundingClientRect(), vw = innerWidth, vh = innerHeight, mob = vw <= 760;
   const m = stage && document.body.classList.contains('has3d') ? stage.metrics() : null;
   const shift = $('main').getBoundingClientRect().left;                     // geseran whip
-  const cx = r.left + r.width / 2;
-  const g = { cx, x: cx - shift, y: r.top + r.height / 2, d: Math.min(150, vw * 0.3), half: Math.min(vw * 0.42, 330), wh: 150, ppu: 0, wide: 1 };
+  const cx = r.left + r.width / 2, cy = r.top + r.height * (mob ? 0.47 : 0.5);
+  // tombol hitam ukuran sedang, earcup besar di tepi kiri-kanan, gelombang mengisi ruang di antaranya
+  const d = mob ? Math.min(vw * 0.25, 104) : Math.min(vw * 0.15, vh * 0.25, 210);
+  const g = { cx, x: cx - shift, y: cy, d, half: Math.min(vw * 0.36, 420), wh: vh * 0.34, ppu: 0, wide: 1 };
   if (m) {
-    const ppu = Math.min(vh * 0.54, vw * 0.8 / (2 * (m.cupDist + m.cupHalfW)));   // tinggi headphone di layar
-    const gap = 2 * (m.cupDist - m.cupHalfW) * ppu;                               // jarak antar bantalan earcup
+    const X = vw * (mob ? 0.37 : 0.36);                                    // tengah earcup dari tengah layar
+    let ppu = (mob ? 0.2 : 0.56) * vh / m.cupH;                             // tinggi earcup ±56% layar (HP 20%)
+    ppu = Math.min(ppu, (vw * 0.5 - X) / m.cupHalfW);                       // earcup tidak keluar layar
     g.ppu = ppu;
-    g.d = gap * 1.25 / 1.11;                                                      // tombol (dengan cincin) sedikit lebih lebar dari celah: terjepit bantalan
-    g.half = Math.min(ppu * 0.72, vw / 2 - 6);                                    // gelombang melebar melewati kedua earcup
-    g.wh = ppu * 0.5;
-    g.y = r.top + r.height * 0.465 - m.cupY * ppu;                                // headphone utuh berada di tengah, tombol sejajar earcup
+    g.wide = Math.max(1, X / (m.cupDist * ppu));
+    g.half = X - m.cupHalfW * ppu * 0.75;                                   // gelombang berakhir di bantalan earcup
+    g.wh = m.cupH * ppu * 0.62;
+    g.y = cy;                                                               // earcup sejajar tombol
   }
   return g;
 }
@@ -422,16 +425,18 @@ function setupWaves() {
     const w = Math.ceil(G.half * 2), h = Math.ceil(G.wh), dpr = Math.min(devicePixelRatio || 1, 2);
     if (w !== cw || h !== ch) { cw = w; ch = h; c.style.width = w + 'px'; c.style.height = h + 'px'; c.width = w * dpr; c.height = h * dpr; }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-    const t = calm.matches ? 0 : now / 1000, lines = 26, x0 = 2, x1 = w - 2;
+    const t = calm.matches ? 0 : now / 1000, lines = 34, x0 = 2, x1 = w - 2;
     for (let i = 0; i < lines; i++) {
       const p = i / (lines - 1);
       g.beginPath();
       for (let x = x0; x <= x1; x += 4) {
         const u = (x - x0) / (x1 - x0), env = Math.sin(u * Math.PI);
-        const y = h / 2 + env * (Math.sin(u * 9 + t * 1.3 + p * 2.2) * h * 0.22 + Math.sin(u * 4 - t * 0.7 + p * 5) * h * 0.12) * (0.4 + p * 0.6);
+        const env2 = Math.pow(Math.sin(u * Math.PI), 0.6);   // pita gelombang tebal sampai dekat earcup
+        const tw = Math.cos(u * 5.2 - t * 0.9 + p * Math.PI);                 // pita berpilin
+        const y = h / 2 + env2 * (Math.sin(u * 6 + t * 1.2 + p * 1.4) * h * 0.3 * tw + Math.sin(u * 3 - t * 0.6 + p * 3) * h * 0.14);
         x === x0 ? g.moveTo(x, y) : g.lineTo(x, y);
       }
-      g.strokeStyle = `rgba(47, 91, 60, ${0.25 + p * 0.45})`; g.lineWidth = 0.9; g.stroke();
+      g.strokeStyle = `rgba(38, 82, 52, ${0.3 + p * 0.5})`; g.lineWidth = 1; g.stroke();
     }
   }
   requestAnimationFrame(frame);

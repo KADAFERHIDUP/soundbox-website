@@ -76,7 +76,7 @@ export function createStage(canvas, { onProgress } = {}) {
     p.size = a.ppu / innerHeight;
     p.wide = a.wide;
     p.x = (a.x - innerWidth / 2) / innerWidth;
-    p.y = -(a.y - innerHeight / 2) / innerHeight - model.userData.cupY * p.size;
+    p.y = -(a.y - innerHeight / 2) / innerHeight - model.userData.cupY * p.size;   // tengah earcup di titik a.y
     return true;
   }
   const _v = new THREE.Vector3(), _b = new THREE.Box3();

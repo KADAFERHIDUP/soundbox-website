@@ -263,7 +263,7 @@ body.sound-on .hero .sound-pill { opacity: 0; pointer-events: none; }
 
 /* ---------- pre-order ---------- */
 .preorder { overflow: hidden; }
-.preorder .quote { position: absolute; z-index: 2; left: clamp(16px, 2.6vw, 34px); top: calc(var(--frame-y) + 5vh); width: calc(var(--frame-x) - clamp(16px, 2.6vw, 34px) * 2); max-width: 300px; }   /* di kolom kiri, tidak menimpa headphone */
+.preorder .quote { position: absolute; z-index: 5; left: var(--frame-x); top: calc(var(--frame-y) + 6vh); max-width: 260px; margin-left: 4%; }
 .po-center { position: fixed; z-index: 4; left: 50%; top: 50%; width: 0; height: 0; visibility: hidden; pointer-events: none; will-change: transform; }
 .po-center.on { visibility: visible; }
 .po-wave { z-index: 2; }   /* gelombang lewat di belakang headphone (kanvas 3D), tombol di depannya */
