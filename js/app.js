@@ -124,7 +124,7 @@ const POSES = {
     reviews: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     faq: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     track: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
-    preorder: { x: 0, y: 0, size: 0.9, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.3 },  // fit: earcup mengapit tombol, sejajar gelombang
+    preorder: { x: 0, y: 0, size: 0.66, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.25 },  // fit: earcup mengapit tombol, sejajar gelombang
   },
   mobile: {
     hero: { x: 0, y: 0.06, size: 0.4, rx: 0.16, ry: 0.72, rz: -0.06, op: 1, spread: 0, wide: 1 },
@@ -136,7 +136,7 @@ const POSES = {
     reviews: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     faq: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     track: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
-    preorder: { x: 0, y: 0, size: 0.4, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.37 },
+    preorder: { x: 0, y: 0, size: 0.36, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.33 },
   },
 };
 // transisi whip-pan (kamera menyapu melewati tebing) saat pindah antara bagian ini, ke dua arah
@@ -178,13 +178,13 @@ function endWhip() {
   document.body.classList.remove('whipping');
   if (w?.next && w.next.name !== shown) whip(w.next.down, w.next.name, w.next.el);
 }
-function whip(down, name, el) {
+function whip(down, name, el, scrollTop) {
   const body = document.body;
   if (calm.matches || body.classList.contains('intro') || !stage) { showScene(name, el); stage?.jump(table()[name]); return; }
   if (wp) {
     if (!wp.swapped) {
       if (name === wp.from) { wp.back = true; wp.backFrom = performance.now(); wp.backC = wp.c; return; } // balik arah sebelum tertutup
-      wp.name = name; wp.el = el; return;                                                              // ganti tujuan
+      wp.name = name; wp.el = el; wp.scrollTop = scrollTop; return;                                                              // ganti tujuan
     }
     wp.next = { down, name, el }; return;                                                              // antre setelah selesai
   }
@@ -199,7 +199,7 @@ function whip(down, name, el) {
   strip.classList.toggle('org-l', !leftHas); strip.classList.toggle('org-r', !rightHas);
   strip.style.width = (W + fl + fr) + 'px';
   strip.style.setProperty('--fl', fl + 'px'); strip.style.setProperty('--fr', fr + 'px');
-  wp = { down, name, el, from, vw, W, D: vw + W, fl, start: performance.now(), swapped: false, c: 0 };
+  wp = { down, name, el, from, vw, W, D: vw + W, fl, start: performance.now(), swapped: false, c: 0, scrollTop };
   body.classList.add('whipping');
   $('#wipe').classList.add('go');
   sound.tick(0.6);
@@ -213,7 +213,14 @@ function whip(down, name, el) {
     } else {
       const t = Math.min(1, (now - w.start) / WHIP_MS);
       c = easeIO(t) * w.D; done = t >= 1;
-      if (!w.swapped && c >= w.vw) { w.swapped = true; swapTo(w.name, w.el); }
+      if (!w.swapped && c >= w.vw) {
+        w.swapped = true;
+        if (w.scrollTop != null) {   // pindah halaman saat layar tertutup batu penuh
+          lastScene = w.name; lastIndex = scenes.indexOf(w.el);
+          scrollTo({ top: w.scrollTop, behavior: 'instant' });
+        }
+        swapTo(w.name, w.el);
+      }
     }
     w.c = c;
     const s = w.down ? 1 : -1;
@@ -228,6 +235,60 @@ function whip(down, name, el) {
 }
 
 let scenes = [], lastScene = '', lastWord = '';
+
+/* Antar bagian yang memakai whip, halaman berpindah per halaman: roda mouse, geser jari, atau tombol panah
+   di batas bagian langsung memicu whip. Halaman berikutnya tidak terlihat sebelum transisi, dan posisi
+   scroll baru dipindah saat layar tertutup tebing. Scroll biasa tetap jalan di bagian lain. */
+const pagingOn = () => stage && !calm.matches && !document.body.classList.contains('intro') && !document.body.classList.contains('no3d');
+function neighbor(dir) {
+  const list = scenes.filter(el => el.offsetHeight > 0);
+  const i = list.findIndex(el => el.dataset.scene === shown);
+  const el = i < 0 ? null : list[i + dir];
+  return el && isWipe(shown, el.dataset.scene) ? el : null;
+}
+function atEdge(dir) {
+  const el = scenes.find(e => e.dataset.scene === shown); if (!el) return false;
+  const r = el.getBoundingClientRect();
+  return dir > 0 ? r.bottom <= innerHeight + 8 : r.top >= -8;
+}
+function pageWhip(dir) {
+  if (!pagingOn()) return false;
+  const el = neighbor(dir); if (!el || !atEdge(dir)) return false;
+  const top = dir > 0 ? el.offsetTop : el.offsetTop + Math.max(0, el.offsetHeight - innerHeight);
+  whip(dir > 0, el.dataset.scene, el, top);
+  return true;
+}
+function setupPaging() {
+  const skip = t => t?.closest?.('dialog, #menu, input, textarea, select');
+  let lastWheel = 0, lock = 0;
+  addEventListener('wheel', e => {
+    if (e.ctrlKey || skip(e.target)) return;
+    const t = performance.now(), gap = t - lastWheel; lastWheel = t;
+    if (wp) { e.preventDefault(); lock = t + 450; return; }
+    // sisa dorongan touchpad setelah transisi tidak langsung memicu transisi berikutnya
+    if (t < lock) { e.preventDefault(); if (gap < 120) lock = t + 220; return; }
+    const dir = Math.sign(e.deltaY);
+    if (dir && pageWhip(dir)) e.preventDefault();
+  }, { passive: false });
+  let ty = null, fired = false;
+  addEventListener('touchstart', e => { ty = e.touches[0].clientY; fired = false; }, { passive: true });
+  addEventListener('touchmove', e => {
+    if (ty == null || skip(e.target)) return;
+    if (wp) { if (e.cancelable) e.preventDefault(); return; }
+    const dy = ty - e.touches[0].clientY, dir = Math.sign(dy);
+    if (!dir || !pagingOn() || !neighbor(dir) || !atEdge(dir)) return;
+    if (e.cancelable) e.preventDefault();
+    if (!fired && Math.abs(dy) > 40) { fired = true; pageWhip(dir); }
+  }, { passive: false });
+  addEventListener('keydown', e => {
+    if (e.altKey || e.ctrlKey || e.metaKey || skip(e.target) || document.querySelector('dialog[open]')) return;
+    const dir = ['ArrowDown', 'PageDown'].includes(e.key) || (e.key === ' ' && !e.shiftKey) ? 1
+      : ['ArrowUp', 'PageUp'].includes(e.key) || (e.key === ' ' && e.shiftKey) ? -1 : 0;
+    if (!dir) return;
+    if (wp) { e.preventDefault(); return; }
+    if (pageWhip(dir)) e.preventDefault();
+  });
+}
 function collectScenes() { scenes = $$('[data-scene]').filter(el => el.offsetParent !== null || getComputedStyle(el).display !== 'none'); $('#idx-total').textContent = scenes.length; }
 
 function choreograph() {
@@ -558,7 +619,7 @@ function markStagger() {
 /* ---------------- mulai ---------------- */
 markStagger();
 renderTexts(); renderSpecs(); renderColors(); renderEditions(); renderSheet(); renderReviews(null);
-setupChrome(); setupSheets(); setupDrag(); setupWaves(); setupEq(); setupReviewForm(); setupReveal();
+setupChrome(); setupSheets(); setupDrag(); setupWaves(); setupEq(); setupReviewForm(); setupReveal(); setupPaging();
 collectScenes();
 let ticking = false;
 addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; choreograph(); }); } }, { passive: true });

@@ -64,7 +64,7 @@ export function createStage(canvas, { onProgress } = {}) {
   function applyFit(p) {
     if (!p.fit || !model) return;
     const d = model.userData.cupDist, H = visH(), W = visW();
-    p.wide = Math.min(3.2, Math.max(1, (p.fit * W) / (d * p.size * H)));
+    p.wide = Math.min(1.8, Math.max(1, (p.fit * W) / (d * p.size * H)));
     p.y = -model.userData.cupY * p.size + (p.fitY || 0);
   }
   const _v = new THREE.Vector3(), _b = new THREE.Box3();
