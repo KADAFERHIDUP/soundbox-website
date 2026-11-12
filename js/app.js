@@ -386,48 +386,49 @@ function setupDrag() {
 }
 
 /* ---------------- animasi kanvas 2D ---------------- */
-/* Komposisi pre-order: tombol hitam di tengah, earcup mengapitnya, gelombang suara menyambung keduanya.
-   Semua ukuran diturunkan dari ukuran tombol, dan posisi ketiganya dihitung dari kotak bagian #preorder
-   pada frame yang sama, jadi saat di-scroll tidak ada yang tertinggal. */
+/* Komposisi pre-order: headphone tampak depan dengan bentuk asli (tanpa dilebarkan, sama seperti di halaman pertama),
+   tombol hitam dijepit di antara kedua earcup, gelombang suara lewat di belakang headphone.
+   Ukuran tombol dan gelombang diturunkan dari ukuran headphone, dan posisi ketiganya dihitung dari kotak
+   bagian #preorder pada frame yang sama, jadi saat di-scroll tidak ada yang tertinggal. */
 function poGeom() {
-  const sec = $('#preorder'), disc = $('.po-disc');
-  const r = sec.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
-  const ring = vw <= 760 ? 6 : 8, rv = disc.offsetWidth / 2 + ring;        // jari-jari tombol termasuk cincin
+  const r = $('#preorder').getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
   const m = stage && document.body.classList.contains('has3d') ? stage.metrics() : null;
   const shift = $('main').getBoundingClientRect().left;                     // geseran whip
-  const g = { cx: r.left + r.width / 2, x: r.left + r.width / 2 - shift, y: r.top + r.height / 2, rv, half: rv * 3.1, cup: 0, ppu: 0, wide: 1 };
+  const cx = r.left + r.width / 2;
+  const g = { cx, x: cx - shift, y: r.top + r.height / 2, d: Math.min(150, vw * 0.3), half: Math.min(vw * 0.42, 330), wh: 150, ppu: 0, wide: 1 };
   if (m) {
-    const WIDE = 1.75, GAP = 0.95;                                          // headband sedikit dilebarkan; jarak tombol–earcup hampir satu jari-jari untuk gelombang
-    let ppu = rv * (1 + GAP) / (WIDE * m.cupDist - m.cupHalfW);
-    ppu = Math.min(ppu, vh * 0.56, vw * 0.36 / (WIDE * m.cupDist + m.cupHalfW));
-    const off = Math.max(rv * 1.25 + m.cupHalfW * ppu, WIDE * m.cupDist * ppu);
-    g.ppu = ppu; g.wide = off / (m.cupDist * ppu);
-    g.half = off - m.cupHalfW * ppu * 0.5;                                  // ujung gelombang masuk sedikit ke bantalan
-    g.y += -m.cupY * ppu * 0.5;                                             // headband di atas, jadi grup diturunkan supaya seimbang di tengah
+    const ppu = Math.min(vh * 0.54, vw * 0.8 / (2 * (m.cupDist + m.cupHalfW)));   // tinggi headphone di layar
+    const gap = 2 * (m.cupDist - m.cupHalfW) * ppu;                               // jarak antar bantalan earcup
+    g.ppu = ppu;
+    g.d = gap * 1.25 / 1.11;                                                      // tombol (dengan cincin) sedikit lebih lebar dari celah: terjepit bantalan
+    g.half = Math.min(ppu * 0.72, vw / 2 - 6);                                    // gelombang melebar melewati kedua earcup
+    g.wh = ppu * 0.5;
+    g.y = r.top + r.height * 0.465 - m.cupY * ppu;                                // headphone utuh berada di tengah, tombol sejajar earcup
   }
   return g;
 }
 function setupWaves() {
-  const po = $('#po-center'), c = $('#waves'), g = c.getContext('2d');
-  let cw = 0, ch = 0;
+  const po = $('#po-center'), pw = $('#po-wave'), disc = $('.po-disc'), c = $('#waves'), g = c.getContext('2d');
+  let cw = 0, ch = 0, dNow = 0;
   function frame(now) {
     requestAnimationFrame(frame);
     const sec = $('#preorder').getBoundingClientRect();
     const on = sec.bottom > -40 && sec.top < innerHeight + 40 && sec.right > 0 && sec.left < innerWidth;
-    po.classList.toggle('on', on);
+    po.classList.toggle('on', on); pw.classList.toggle('on', on);
     if (!on) return;
     const G = poGeom();
-    po.style.transform = `translate3d(${(G.cx - innerWidth / 2).toFixed(1)}px, ${(G.y - innerHeight / 2).toFixed(1)}px, 0)`;
-    const w = Math.ceil(G.half * 2 + 8), h = Math.ceil(G.rv * 2.2), dpr = Math.min(devicePixelRatio || 1, 2);
+    if (Math.abs(G.d - dNow) > 0.5) { dNow = G.d; disc.style.setProperty('--d', G.d.toFixed(1) + 'px'); }
+    po.style.transform = pw.style.transform = `translate3d(${(G.cx - innerWidth / 2).toFixed(1)}px, ${(G.y - innerHeight / 2).toFixed(1)}px, 0)`;
+    const w = Math.ceil(G.half * 2), h = Math.ceil(G.wh), dpr = Math.min(devicePixelRatio || 1, 2);
     if (w !== cw || h !== ch) { cw = w; ch = h; c.style.width = w + 'px'; c.style.height = h + 'px'; c.width = w * dpr; c.height = h * dpr; }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-    const t = calm.matches ? 0 : now / 1000, lines = 26, x0 = 4, x1 = w - 4;
+    const t = calm.matches ? 0 : now / 1000, lines = 26, x0 = 2, x1 = w - 2;
     for (let i = 0; i < lines; i++) {
       const p = i / (lines - 1);
       g.beginPath();
       for (let x = x0; x <= x1; x += 4) {
         const u = (x - x0) / (x1 - x0), env = Math.sin(u * Math.PI);
-        const y = h / 2 + env * (Math.sin(u * 9 + t * 1.3 + p * 2.2) * h * 0.2 + Math.sin(u * 4 - t * 0.7 + p * 5) * h * 0.11) * (0.4 + p * 0.6);
+        const y = h / 2 + env * (Math.sin(u * 9 + t * 1.3 + p * 2.2) * h * 0.22 + Math.sin(u * 4 - t * 0.7 + p * 5) * h * 0.12) * (0.4 + p * 0.6);
         x === x0 ? g.moveTo(x, y) : g.lineTo(x, y);
       }
       g.strokeStyle = `rgba(47, 91, 60, ${0.25 + p * 0.45})`; g.lineWidth = 0.9; g.stroke();

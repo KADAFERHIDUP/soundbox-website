@@ -263,18 +263,19 @@ body.sound-on .hero .sound-pill { opacity: 0; pointer-events: none; }
 
 /* ---------- pre-order ---------- */
 .preorder { overflow: hidden; }
-.preorder .quote { position: absolute; z-index: 2; left: var(--frame-x); bottom: calc(var(--frame-y) + 10px); max-width: 240px; margin-left: 6px; }
+.preorder .quote { position: absolute; z-index: 2; left: clamp(16px, 2.6vw, 34px); top: calc(var(--frame-y) + 5vh); width: calc(var(--frame-x) - clamp(16px, 2.6vw, 34px) * 2); max-width: 300px; }   /* di kolom kiri, tidak menimpa headphone */
 .po-center { position: fixed; z-index: 4; left: 50%; top: 50%; width: 0; height: 0; visibility: hidden; pointer-events: none; will-change: transform; }
 .po-center.on { visibility: visible; }
+.po-wave { z-index: 2; }   /* gelombang lewat di belakang headphone (kanvas 3D), tombol di depannya */
 body.intro .po-center { visibility: hidden; }
 .waves { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
-.po-disc { position: absolute; z-index: 3; left: 0; top: 0; pointer-events: auto; width: clamp(118px, 10.5vw, 168px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 0; cursor: pointer; color: #eceae3;
+.po-disc { position: absolute; z-index: 3; left: 0; top: 0; pointer-events: auto; width: var(--d, 140px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 0; cursor: pointer; color: #eceae3;
   background: radial-gradient(circle, rgba(255, 255, 255, .12) 1px, transparent 1.6px) 0 0 / 7px 7px, radial-gradient(circle at 50% 40%, #2a2a28, #0d0d0c 70%);
-  box-shadow: 0 0 0 8px #0d0d0c, 0 20px 50px rgba(0, 0, 0, .35); display: grid; place-content: center; transition: transform .5s var(--ease); }
-.po-disc::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: radial-gradient(circle at 50% 4%, #555 2px, transparent 3px), radial-gradient(circle at 96% 50%, #555 2px, transparent 3px), radial-gradient(circle at 50% 96%, #555 2px, transparent 3px), radial-gradient(circle at 4% 50%, #555 2px, transparent 3px); }
+  box-shadow: 0 0 0 calc(var(--d, 140px) * .055) #0d0d0c, 0 20px 50px rgba(0, 0, 0, .35); display: grid; place-content: center; transition: transform .5s var(--ease); }
+.po-disc::before { content: ''; position: absolute; inset: calc(var(--d, 140px) * -.055); border-radius: 50%; background: radial-gradient(circle at 50% 4%, #555 2px, transparent 3px), radial-gradient(circle at 96% 50%, #555 2px, transparent 3px), radial-gradient(circle at 50% 96%, #555 2px, transparent 3px), radial-gradient(circle at 4% 50%, #555 2px, transparent 3px); }
 .po-disc:hover { transform: translate(-50%, -50%) scale(1.05) rotate(-4deg); }
-.po-disc .script { font-size: clamp(44px, 4vw, 62px); line-height: .5; transform: rotate(-8deg) translate(-8%, 0); }
-.po-word { font: 400 clamp(17px, 1.5vw, 24px)/1 var(--sans); text-transform: uppercase; margin-top: 4px; }
+.po-disc .script { font-size: calc(var(--d, 140px) * .37); line-height: .5; transform: rotate(-8deg) translate(-8%, 0); }
+.po-word { font: 400 calc(var(--d, 140px) * .145)/1 var(--sans); text-transform: uppercase; margin-top: 4px; }
 .po-meta { position: absolute; z-index: 2; right: var(--frame-x); bottom: calc(var(--frame-y) + 10px); text-align: left; margin-right: 18px; }
 .po-bar { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; height: var(--frame-y); display: grid; grid-template-columns: var(--frame-x) auto 1fr auto var(--frame-x); align-items: center; }
 .po-price, .po-count { padding: 0 clamp(16px, 2.6vw, 34px); display: grid; gap: 2px; }
@@ -411,11 +412,7 @@ body.no3d .drag-zone { display: none; }
   .tech-grid, .edition-grid, .spec-table { grid-template-columns: 1fr; }
   .spec-table div { grid-template-columns: 110px 1fr; }
   .row2 { grid-template-columns: 1fr; }
-  .preorder .quote { left: 18px; right: 18px; top: 12vh; bottom: auto; margin: 0; max-width: none; font-size: 11px; }
-  .po-disc { width: 92px; box-shadow: 0 0 0 6px #0d0d0c, 0 16px 40px rgba(0, 0, 0, .3); }
-  .po-disc::before { inset: -6px; }
-  .po-disc .script { font-size: 38px; }
-  .po-word { font-size: 15px; }
+  .preorder .quote { left: 18px; right: 18px; top: 12vh; width: auto; margin: 0; max-width: none; font-size: 11px; }
   .po-meta { right: 18px; bottom: calc(var(--frame-y) + 64px); margin: 0; }
   .po-bar { height: auto; bottom: 14px; grid-template-columns: auto 1fr auto; row-gap: 10px; }
   .po-bar .small-ico { display: none; }
