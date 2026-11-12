@@ -16,6 +16,8 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="modulepreload" href="vendor/three.module.js">
   <link rel="preload" href="models/soundbox-s9.glb" as="fetch" crossorigin>
+  <link rel="preload" href="img/rock-left.webp" as="image">
+  <link rel="preload" href="img/rock-right.webp" as="image">
   <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
 </head>
 <body class="intro">
@@ -34,8 +36,12 @@
   <div class="backdrop" aria-hidden="true">
     <span class="bigword" id="bigword">dope</span>
   </div>
+  <div class="rocks" id="rocks" aria-hidden="true">
+    <div class="rock rock-l"><img src="img/rock-left.webp" alt="" width="742" height="2072" fetchpriority="high"></div>
+    <div class="rock rock-r"><img src="img/rock-right.webp" alt="" width="776" height="2072" fetchpriority="high"></div>
+  </div>
   <canvas id="gl" class="gl" aria-hidden="true"></canvas>
-  <div class="blur-wipe" id="wipe" aria-hidden="true"></div>
+  <div class="wipe" id="wipe" aria-hidden="true"><img src="img/rock-blur.webp" alt="" width="900" height="1000"></div>
 
   <!-- bingkai garis seperti di video -->
   <div class="frame" aria-hidden="true">
@@ -295,7 +301,7 @@
       <div><h4 class="mono">// kabar terbaru</h4><p class="small">Masuk waitlist untuk kabar stok dan warna baru.</p><button class="btn dark sm" type="button" data-open="waitlist">Gabung waitlist</button></div>
     </div>
     <div class="foot-note mono">
-      <p>Model 3D: <a id="credit-link" target="_blank" rel="noopener"></a> oleh <a id="credit-author" target="_blank" rel="noopener"></a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), diubah bentuk dan warnanya, logo dihapus. Tebing batu dibuat dari kode.</p>
+      <p>Model 3D: <a id="credit-link" target="_blank" rel="noopener"></a> oleh <a id="credit-author" target="_blank" rel="noopener"></a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), diubah bentuk dan warnanya, logo dihapus. </p>
       <p>© <span id="year">2026</span> Soundbox · Dibuat oleh Ahmad Umraithi</p>
     </div>
   </footer>

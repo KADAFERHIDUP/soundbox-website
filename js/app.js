@@ -139,9 +139,17 @@ const POSES = {
     preorder: { x: 0, y: 0.16, size: 0.5, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1.35 },
   },
 };
-// tebing menutup (seperti transisi blur di video) saat pindah antara bagian ini
-const WIPES = new Set(['hero>specs', 'specs>materials', 'materials>colors', 'faq>preorder', 'track>preorder']);
+// sapuan batu (seperti transisi blur di video) saat pindah antara bagian ini, ke dua arah
+const WIPES = new Set(['hero|specs', 'specs|materials', 'materials|colors', 'colors|tech', 'faq|preorder', 'track|preorder']);
 const KEYS = ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'spread', 'wide'];
+let lastIndex = 0;
+function wipe(down) {
+  if (calm.matches || document.body.classList.contains('intro')) return;
+  const w = $('#wipe');
+  w.classList.remove('go', 'up'); void w.offsetWidth;
+  w.classList.toggle('up', !down); w.classList.add('go');
+  sound.tick(0.6);
+}
 const smooth = t => t * t * (3 - 2 * t);
 
 let scenes = [], lastScene = '', lastWord = '';
@@ -172,16 +180,16 @@ function choreograph() {
   const pa = table[A], pb = table[B], k = smooth(Math.min(1, Math.max(0, (t - 0.15) / 0.7)));
   const pose = {};
   KEYS.forEach(key => { pose[key] = pa[key] + (pb[key] - pa[key]) * k; });
-  const wipe = a !== b && WIPES.has(`${A}>${B}`) ? Math.max(0, 1 - Math.abs(t - 0.5) / 0.24) : 0;
-  pose.close = smooth(wipe);
   stage?.pose(pose);
-  $('#wipe').style.opacity = (pose.close * 0.9).toFixed(3);
+  $('#rocks').style.setProperty('--spread', pose.spread.toFixed(3));
   const now = t < 0.5 ? a : b, nowEl = scenes[now];
   stage?.setSpin(calm.matches ? 0 : (table[nowEl.dataset.scene].spin || 0));
   if (nowEl.dataset.scene !== lastScene) {
+    const prev = lastScene;
     lastScene = nowEl.dataset.scene;
+    if (prev && (WIPES.has(`${prev}|${lastScene}`) || WIPES.has(`${lastScene}|${prev}`))) wipe(now > lastIndex);
+    lastIndex = now;
     $('#idx').textContent = now;
-    sound.tick(0.8);
   }
   const word = nowEl.dataset.word || '';
   if (word !== lastWord) {
@@ -199,16 +207,23 @@ async function start3D() {
   const bar = $('#loader-bar'), pct = $('#loader-pct');
   stage = createStage($('#gl'), { onProgress: p => { bar.style.width = Math.round(p * 100) + '%'; pct.textContent = Math.round(p * 100) + '%'; } });
   stage.setVariant(V().colors, false);
-  stage.jump({ ...POSES[mobile.matches ? 'mobile' : 'desk'].hero, light: 0, close: 0 });
+  stage.jump({ ...POSES[mobile.matches ? 'mobile' : 'desk'].hero, light: 0 });
   await stage.ready;
+  window.__soundbox = { stage };
   document.body.classList.add('has3d');
   choreograph();
   return stage;
 }
+// pembuka seperti video: gelap total, headphone muncul tersorot, lalu seluruh adegan menjadi terang
+let revealed = false;
 function reveal() {
-  $('#loader').classList.add('gone');
-  document.body.classList.remove('intro');
-  setTimeout(() => stage?.light(1), 300);
+  if (revealed) return; revealed = true;
+  const L = $('#loader');
+  L.classList.add('lit');
+  if (!stage) { L.classList.add('gone'); document.body.classList.remove('intro'); return; }
+  const slow = calm.matches ? 0 : 1;
+  setTimeout(() => stage.light(1), 900 * slow);
+  setTimeout(() => { L.classList.add('gone'); document.body.classList.remove('intro'); }, 1500 * slow);
 }
 
 /* rotasi dengan menggeser di bagian Warna */
@@ -437,7 +452,13 @@ async function loadCatalog() {
 renderTexts(); renderSpecs(); renderColors(); renderEditions(); renderSheet(); renderReviews(null);
 setupChrome(); setupSheets(); setupDrag(); setupWaves(); setupEq(); setupReviewForm(); setupReveal();
 collectScenes();
-addEventListener('scroll', choreograph, { passive: true });
+let ticking = false;
+addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; choreograph(); }); } }, { passive: true });
+addEventListener('pointermove', e => {
+  const r = $('#rocks');
+  r.style.setProperty('--mx', (e.clientX / innerWidth - 0.5).toFixed(3));
+  r.style.setProperty('--my', (e.clientY / innerHeight - 0.5).toFixed(3));
+}, { passive: true });
 addEventListener('resize', () => { collectScenes(); choreograph(); });
 mobile.addEventListener?.('change', choreograph);
 
