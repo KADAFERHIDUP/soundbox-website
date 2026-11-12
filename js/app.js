@@ -143,26 +143,88 @@ const POSES = {
 const WIPES = new Set(['hero|specs', 'specs|materials', 'materials|colors', 'colors|tech', 'faq|preorder', 'track|preorder']);
 const isWipe = (x, y) => WIPES.has(`${x}|${y}`) || WIPES.has(`${y}|${x}`);
 const KEYS = ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'spread', 'wide'];
-const WHIP_MS = 950;
+const WHIP_MS = 1000;
 const smooth = t => t * t * (3 - 2 * t);
-let lastIndex = 0, shown = '', whipTimer = 0, whipEnd = 0;
+let lastIndex = 0, shown = '';
 function table() { return POSES[mobile.matches ? 'mobile' : 'desk']; }
 function showScene(name, el) {
   shown = name;
   scenes.forEach(x => x.classList.toggle('active', x === el));
 }
+/* whip-pan: halaman lama, dinding tebing, lalu halaman baru disusun sebagai satu panorama
+   dan digeser bersama tiap frame. Tepi dinding menempel tepat ke tebing halaman,
+   jadi tidak ada celah kosong; komposisi baru dipasang saat layar penuh tertutup batu. */
+const easeIO = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+let wp = null; // whip yang sedang berjalan
+const hasRocks = n => (table()[n]?.spread ?? 1) < 0.5;
+function setWord(word) {
+  lastWord = word;
+  const bw = $('#bigword');
+  bw.classList.remove('swap'); bw.textContent = word;
+}
+function swapTo(name, el) {
+  showScene(name, el);
+  const p = table()[name];
+  stage.jump(p);
+  stage.setSpin(calm.matches ? 0 : (p.spin || 0));
+  $('#rocks').style.setProperty('--spread', p.spread);
+  setWord(el.dataset.word || '');
+}
+function whipLayers() { return [$('#gl'), $('#rocks'), $('.backdrop'), $('main')]; }  // teks ikut tersapu bersama kamera
+function endWhip() {
+  const w = wp; wp = null;
+  whipLayers().forEach(x => { x.style.transform = ''; });
+  $('#wipe').classList.remove('go');
+  document.body.classList.remove('whipping');
+  if (w?.next && w.next.name !== shown) whip(w.next.down, w.next.name, w.next.el);
+}
 function whip(down, name, el) {
-  const w = $('#wipe'), body = document.body;
+  const body = document.body;
   if (calm.matches || body.classList.contains('intro') || !stage) { showScene(name, el); stage?.jump(table()[name]); return; }
-  clearTimeout(whipTimer); clearTimeout(whipEnd);
-  w.classList.remove('go', 'up'); body.classList.remove('whipping', 'up'); void w.offsetWidth;
-  w.classList.toggle('up', !down); body.classList.toggle('up', !down);
-  w.classList.add('go'); body.classList.add('whipping');
-  scenes.forEach(x => x.classList.remove('active'));
+  if (wp) {
+    if (!wp.swapped) {
+      if (name === wp.from) { wp.back = true; wp.backFrom = performance.now(); wp.backC = wp.c; return; } // balik arah sebelum tertutup
+      wp.name = name; wp.el = el; return;                                                              // ganti tujuan
+    }
+    wp.next = { down, name, el }; return;                                                              // antre setelah selesai
+  }
+  const vw = innerWidth, H = innerHeight * 1.08, ov = Math.round(vw * 0.05);
+  const from = shown, A = hasRocks(from), B = hasRocks(name);
+  const leftHas = down ? A : B, rightHas = down ? B : A;    // ujung kiri dinding menempel tebing kanan, ujung kanan menempel tebing kiri
+  // dinding minimal 1.8 layar, dan cukup panjang untuk tebing ujung + bagian tengah di layar sempit
+  const need = (leftHas ? 0 : H * 776 / 2072) + (rightHas ? 0 : H * 742 / 2072) + H * 317 / 1600 + vw * 1.1;
+  const W = Math.round(Math.max(vw * 1.8, need));
+  const fl = leftHas ? ov : 0, fr = rightHas ? ov : 0;
+  const strip = $('#whip-strip');
+  strip.classList.toggle('org-l', !leftHas); strip.classList.toggle('org-r', !rightHas);
+  strip.style.width = (W + fl + fr) + 'px';
+  strip.style.setProperty('--fl', fl + 'px'); strip.style.setProperty('--fr', fr + 'px');
+  wp = { down, name, el, from, vw, W, D: vw + W, fl, start: performance.now(), swapped: false, c: 0 };
+  body.classList.add('whipping');
+  $('#wipe').classList.add('go');
   sound.tick(0.6);
-  // tepat saat layar tertutup pita batu: ganti komposisi sekaligus
-  whipTimer = setTimeout(() => { showScene(name, el); stage.jump(table()[name]); $('#rocks').style.setProperty('--spread', table()[name].spread); choreograph(); }, WHIP_MS * 0.5);
-  whipEnd = setTimeout(() => { w.classList.remove('go', 'up'); body.classList.remove('whipping', 'up'); }, WHIP_MS + 30);
+  const layers = whipLayers();
+  const frame = now => {
+    const w = wp; if (!w) return;
+    let c, done;
+    if (w.back) {           // kembali ke halaman semula dengan mulus
+      const k = Math.min(1, (now - w.backFrom) / 380);
+      c = w.backC * (1 - (1 - Math.pow(1 - k, 3))); done = k >= 1;
+    } else {
+      const t = Math.min(1, (now - w.start) / WHIP_MS);
+      c = easeIO(t) * w.D; done = t >= 1;
+      if (!w.swapped && c >= w.vw) { w.swapped = true; swapTo(w.name, w.el); }
+    }
+    w.c = c;
+    const s = w.down ? 1 : -1;
+    const page = w.swapped ? s * (w.D - c) : -s * c;
+    const x = w.down ? w.vw - c - w.fl : c - w.W - w.fl;
+    layers.forEach(l => { l.style.transform = `translate3d(${page.toFixed(1)}px,0,0)`; });
+    strip.style.transform = `translate3d(${x.toFixed(1)}px,0,0)`;
+    if (done) { if (w.back) showScene(w.from, scenes.find(e => e.dataset.scene === w.from)); endWhip(); }
+    else requestAnimationFrame(frame);
+  };
+  frame(performance.now());
 }
 
 let scenes = [], lastScene = '', lastWord = '';

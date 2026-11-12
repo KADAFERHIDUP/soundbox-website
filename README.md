@@ -28,7 +28,7 @@ Headphone memakai model [“JBL Headphone (changeable colour)”](https://sketch
 - Material diganti (kulit sintetis bertekstur, kain rajut, logam), warnanya dibuat per bagian untuk 7 varian.
 - Disederhanakan dari 164 ribu menjadi 61 ribu segitiga: file 5,2 MB menjadi 1,3 MB.
 
-Tebing batu memakai foto ngarai yang disediakan pemilik website; langitnya sudah dihapus dan fotonya dipertajam (`img/rock-left.webp`, `img/rock-right.webp`, `img/rock-strip.webp` untuk tekstur sapuan). Pastikan foto itu boleh dipakai.
+Tebing batu memakai foto ngarai yang disediakan pemilik website; langitnya sudah dihapus dan fotonya dipertajam (`img/rock-left.webp`, `img/rock-right.webp`, `img/rock-wall.webp` dan `img/rock-cap.webp` untuk dinding tebing saat transisi). Pastikan foto itu boleh dipakai.
 
 ## Mengubah isi
 
