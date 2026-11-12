@@ -37,6 +37,7 @@ export function createStage(canvas, { onProgress } = {}) {
 
   const cur = { x: 0, y: 0, size: 0.7, rx: 0.2, ry: 0.9, rz: 0, light: 0, op: 1, wide: 1, fit: 0, anchor: 0 };
   let anchorFn = null;
+  const CUP_YAW = 1;
   const tgt = { ...cur };
   let spin = 0, spinAngle = 0, mx = 0, my = 0, dragging = false;
   addEventListener('pointermove', e => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; }, { passive: true });
@@ -123,6 +124,11 @@ export function createStage(canvas, { onProgress } = {}) {
     const calmTilt = anchored ? 0.12 : 1 / (cur.wide * cur.wide);   // saat headband dilebarkan, parallax dikecilkan supaya tetap simetris
     tilt.rotation.set(cur.rx + my * 0.12 * calmTilt, cur.ry + spinAngle + mx * 0.25 * calmTilt, cur.rz);
     model?.userData.setWide?.(cur.wide);
+    // earcup yang jauh di tepi layar diputar balik sesuai sudut pandang kamera, supaya tampak dari samping
+    if (model) {
+      const X = model.userData.cupDist * cur.wide * Math.max(cur.size * H, 1e-4);
+      model.userData.setCupYaw(cur.wide > 1.02 ? -Math.atan2(X, camera.position.z) * CUP_YAW : 0);
+    }
 
     // cahaya: intro gelap -> terang
     const L = cur.light;

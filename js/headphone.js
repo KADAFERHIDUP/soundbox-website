@@ -85,25 +85,47 @@ export async function loadHeadphone(mats, onProgress) {
   flat.updateMatrixWorld(true);
   const all = new THREE.Box3().setFromObject(flat);
   const size = all.getSize(new THREE.Vector3()), center = all.getCenter(new THREE.Vector3());
-  // tiap mesh dikelompokkan: headband (tengah) dan earcup kiri/kanan, diukur dari titik tengah model
+  // tiap mesh dikelompokkan: headband dan earcup kiri/kanan. Titik putar tiap earcup = tengah earcup itu sendiri.
+  const sideOf = m => (box.setFromObject(m).getCenter(c).z < center.z ? -1 : 1);
+  const isBand = m => { const pt = partOf(m.name); return pt === 'band' || pt === 'pad'; };
   const bandG = new THREE.Group(), cupG = { '-1': new THREE.Group(), '1': new THREE.Group() };
-  // titik putar headband = ujung bawahnya (tempat menyambung ke earcup), supaya saat diperbesar ujungnya tetap menempel
-  const bandBox = new THREE.Box3();
-  for (const m of meshes) { const pt = partOf(m.name); if (pt === 'band' || pt === 'pad') bandBox.union(new THREE.Box3().setFromObject(m)); }
-  bandG.position.set((bandBox.min.x + bandBox.max.x) / 2, bandBox.min.y, center.z);
+  const cupB = { '-1': new THREE.Box3(), '1': new THREE.Box3() };
+  for (const m of meshes) if (!isBand(m)) cupB[sideOf(m)].union(new THREE.Box3().setFromObject(m));
+  for (const sd of [-1, 1]) cupG[sd].position.copy(cupB[sd].getCenter(new THREE.Vector3()));
   flat.add(bandG, cupG[-1], cupG[1]); flat.updateMatrixWorld(true);
-  const cupBox = new THREE.Box3();
+  // ukuran penampang headband asli: tebal (diukur di puncak lengkungan) dan lebar depan-belakang
+  let bandDepth = 0, tMin = Infinity, tMax = -Infinity;
+  const v = new THREE.Vector3(), bb = new THREE.Box3();
   for (const m of meshes) {
-    box.setFromObject(m).getCenter(c);
-    const part = partOf(m.name);
-    if (part === 'band' || part === 'pad') bandG.attach(m);
-    else { cupG[c.z < center.z ? -1 : 1].attach(m); cupBox.union(box); }
+    if (!isBand(m)) continue;
+    bb.union(new THREE.Box3().setFromObject(m));
+    const pos = m.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i += 3) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+      if (Math.abs(v.z - center.z) < size.y * 0.03) { tMin = Math.min(tMin, v.y); tMax = Math.max(tMax, v.y); }
+    }
   }
-  // jarak tengah earcup ke tengah model dan tinggi tengah earcup (dihitung sebelum model diskalakan)
-  flat.updateMatrixWorld(true);
+  bandDepth = bb.max.x - bb.min.x;
+  const bandThick = Math.max(size.y * 0.03, Math.min(size.y * 0.09, (tMax - tMin) * 1.2));
+  // ujung atas penyangga earcup (tempat headband menyambung), relatif ke titik putar earcup
+  const tip = { '-1': new THREE.Vector3(), '1': new THREE.Vector3() };
+  for (const sd of [-1, 1]) {
+    const top = cupB[sd].max.y, acc = new THREE.Vector3(); let n = 0;
+    for (const m of meshes) {
+      if (isBand(m) || sideOf(m) !== sd) continue;
+      const pos = m.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+        if (v.y > top - size.y * 0.03) { acc.add(v); n++; }
+      }
+    }
+    tip[sd].copy(n ? acc.divideScalar(n) : cupB[sd].getCenter(new THREE.Vector3())).setY(top).sub(cupG[sd].position);
+  }
+  for (const m of meshes) (isBand(m) ? bandG : cupG[sideOf(m)]).attach(m);
+  const cupBox = cupB[-1].clone().union(cupB[1]);
   const cupC = cupBox.getCenter(new THREE.Vector3());
-  const half = s => new THREE.Box3().setFromObject(cupG[s]).getCenter(new THREE.Vector3()).z;
-  const d = (Math.abs(half(-1) - center.z) + Math.abs(half(1) - center.z)) / 2;
+  const base = { '-1': cupG[-1].position.clone(), '1': cupG[1].position.clone() };
+  const d = (Math.abs(base[-1].z - center.z) + Math.abs(base[1].z - center.z)) / 2;
   const k = 1 / size.y;
   flat.scale.setScalar(k);
   flat.position.copy(center).multiplyScalar(-k);
@@ -112,17 +134,58 @@ export async function loadHeadphone(mats, onProgress) {
   holder.userData.cupDist = d * k;
   holder.userData.cupY = (cupC.y - center.y) * k;
   holder.userData.cupH = cupBox.getSize(new THREE.Vector3()).y * k;
-  holder.userData.cupHalfW = new THREE.Box3().setFromObject(cupG[1]).getSize(new THREE.Vector3()).z / 2 * k;
+  holder.userData.cupHalfW = cupB[1].getSize(new THREE.Vector3()).z / 2 * k;
   holder.userData.cups = [cupG[-1], cupG[1]];
-  let wideNow = 1;
-  // f = 1 normal; f > 1 headband melebar dari tengah dan kedua earcup bergeser keluar sejauh ujung headband
+
+  // headband pengganti untuk posisi lebar: lengkungan utuh dari ujung penyangga kiri ke kanan,
+  // dengan tebal dan lebar yang sama seperti aslinya, jadi tidak pernah terputus atau gepeng
+  const procBand = new THREE.Group(); procBand.visible = false; flat.add(procBand);
+  const rrect = (w, h, r, oy = 0) => {
+    const sh = new THREE.Shape(), x0 = -w / 2, y0 = -h / 2 + oy;
+    r = Math.min(r, w / 2, h / 2);
+    sh.moveTo(x0 + r, y0); sh.lineTo(x0 + w - r, y0); sh.quadraticCurveTo(x0 + w, y0, x0 + w, y0 + r);
+    sh.lineTo(x0 + w, y0 + h - r); sh.quadraticCurveTo(x0 + w, y0 + h, x0 + w - r, y0 + h);
+    sh.lineTo(x0 + r, y0 + h); sh.quadraticCurveTo(x0, y0 + h, x0, y0 + h - r);
+    sh.lineTo(x0, y0 + r); sh.quadraticCurveTo(x0, y0, x0 + r, y0);
+    return sh;
+  };
+  const tipAt = sd => {                                             // posisi ujung penyangga setelah earcup digeser dan diputar
+    const p = tip[sd].clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), cupG[sd].rotation.y);
+    return p.add(cupG[sd].position);
+  };
+  function buildBand() {
+    procBand.children.forEach(o => o.geometry.dispose()); procBand.clear();
+    const L = tipAt(-1), R = tipAt(1), zL = L.z, zR = R.z, xMid = (L.x + R.x) / 2;
+    const yTop = Math.min(L.y, R.y) - bandThick * 0.35;           // sedikit masuk ke penyangga
+    const a = (zR - zL) / 2, cz = (zL + zR) / 2, H = a * 1.05;
+    const pts = [];
+    for (let i = 0; i <= 64; i++) {
+      const th = Math.PI * (1 - i / 64), cs = Math.cos(th), sn = Math.sin(th);
+      pts.push(new THREE.Vector3(xMid, yTop + H * Math.pow(sn, 0.8), cz + a * Math.sign(cs) * Math.pow(Math.abs(cs), 0.85)));
+    }
+    const path = new THREE.CatmullRomCurve3(pts);
+    const opt = { steps: 160, bevelEnabled: false, extrudePath: path };
+    const shell = new THREE.Mesh(new THREE.ExtrudeGeometry(rrect(bandDepth, bandThick, bandThick * 0.45), opt), mats.band);
+    const pad = new THREE.Mesh(new THREE.ExtrudeGeometry(rrect(bandDepth * 0.72, bandThick * 0.55, bandThick * 0.25, bandThick * 0.72), opt), mats.pad);
+    procBand.add(shell, pad);
+  }
+  let wideNow = 1, built = '';
+  // f = 1 bentuk asli; f > 1 kedua earcup bergeser keluar dan headband diganti lengkungan yang lebih lebar
   holder.userData.setWide = f => {
     if (Math.abs(f - wideNow) < 1e-4) return;
     wideNow = f;
-    // headband diperbesar proporsional (lebar dan tinggi), bukan ditarik ke samping saja, jadi lengkungannya tidak gepeng
-    bandG.scale.set(1 + (f - 1) * 0.45, f, f);
-    cupG[-1].position.z = -(f - 1) * d;
-    cupG[1].position.z = (f - 1) * d;
+    const wide = f > 1.02;
+    bandG.visible = !wide; procBand.visible = wide;
+    cupG[-1].position.z = base[-1].z - (wide ? (f - 1) * d : 0);
+    cupG[1].position.z = base[1].z + (wide ? (f - 1) * d : 0);
+    rebuild();
   };
+  function rebuild() {
+    if (!procBand.visible) return;
+    const key = wideNow.toFixed(3) + '|' + cupG[1].rotation.y.toFixed(3);
+    if (key !== built) { built = key; buildBand(); }
+  }
+  // memutar earcup di sumbu tegak (melawan efek perspektif saat earcup berada jauh di tepi layar)
+  holder.userData.setCupYaw = a => { cupG[1].rotation.y = a; cupG[-1].rotation.y = -a; rebuild(); };
   return holder;
 }
