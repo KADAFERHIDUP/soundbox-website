@@ -124,7 +124,7 @@ const POSES = {
     reviews: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     faq: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     track: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
-    preorder: { x: 0, y: 0, size: 0.66, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.25 },  // fit: earcup mengapit tombol, sejajar gelombang
+    preorder: { x: 0, y: 0, size: 0.66, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.25, anchor: 1 },  // anchor: menempel ke tombol pre-order  // fit: earcup mengapit tombol, sejajar gelombang
   },
   mobile: {
     hero: { x: 0, y: 0.06, size: 0.4, rx: 0.16, ry: 0.72, rz: -0.06, op: 1, spread: 0, wide: 1 },
@@ -136,13 +136,13 @@ const POSES = {
     reviews: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     faq: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     track: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
-    preorder: { x: 0, y: 0, size: 0.36, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.33 },
+    preorder: { x: 0, y: 0, size: 0.36, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.33, anchor: 1 },
   },
 };
 // transisi whip-pan (kamera menyapu melewati tebing) saat pindah antara bagian ini, ke dua arah
 const WIPES = new Set(['hero|specs', 'specs|materials', 'materials|colors', 'colors|tech', 'faq|preorder', 'track|preorder']);
 const isWipe = (x, y) => WIPES.has(`${x}|${y}`) || WIPES.has(`${y}|${x}`);
-const KEYS = ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'spread', 'wide', 'fit'];
+const KEYS = ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'spread', 'wide', 'fit', 'anchor'];
 const WHIP_MS = 1000;
 const smooth = t => t * t * (3 - 2 * t);
 let lastIndex = 0, shown = '';
@@ -353,6 +353,13 @@ async function start3D() {
   stage.setVariant(V().colors, false);
   stage.jump({ ...POSES[mobile.matches ? 'mobile' : 'desk'].hero, light: 0 });
   await stage.ready;
+  // headphone di bagian pre-order menempel ke tombol: posisi dari layout (tanpa geseran whip), ukuran dari lebar tombol
+  stage.setAnchor(() => {
+    if (shown !== 'preorder') return null;
+    const b = $('.po-disc'); if (!b || !b.offsetWidth) return null;
+    const r = b.getBoundingClientRect(), m = $('main').getBoundingClientRect();
+    return { cx: r.left + r.width / 2 - m.left, cy: r.top + r.height / 2, r: b.offsetWidth / 2 };
+  });
   window.__soundbox = { stage };
   document.body.classList.add('has3d');
   choreograph();
@@ -401,7 +408,6 @@ function setupWaves() {
     if (cups && cups.length === 2 && cups[1].x0 - cups[0].x1 > 80) {
       const ovL = (cups[0].x1 - cups[0].x0) * 0.22, ovR = (cups[1].x1 - cups[1].x0) * 0.22;   // masuk sedikit ke bantalan earcup
       tx0 = cups[0].x1 - ovL - baseLeft; tx1 = cups[1].x0 + ovR - baseLeft;
-      tcy = Math.min(h * 0.7, Math.max(h * 0.3, (cups[0].y0 + cups[0].y1 + cups[1].y0 + cups[1].y1) / 4 - baseTop));
     }
     const kk = wx0 == null ? 1 : 0.2;
     wx0 = wx0 == null ? tx0 : wx0 + (tx0 - wx0) * kk; wx1 = wx1 == null ? tx1 : wx1 + (tx1 - wx1) * kk; wcy = wcy == null ? tcy : wcy + (tcy - wcy) * kk;

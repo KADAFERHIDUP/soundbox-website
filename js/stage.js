@@ -35,7 +35,8 @@ export function createStage(canvas, { onProgress } = {}) {
   hp.add(tilt); scene.add(hp);
   let model = null;
 
-  const cur = { x: 0, y: 0, size: 0.7, rx: 0.2, ry: 0.9, rz: 0, light: 0, op: 1, wide: 1, fit: 0 };
+  const cur = { x: 0, y: 0, size: 0.7, rx: 0.2, ry: 0.9, rz: 0, light: 0, op: 1, wide: 1, fit: 0, anchor: 0 };
+  let anchorFn = null;
   const tgt = { ...cur };
   let spin = 0, spinAngle = 0, mx = 0, my = 0, dragging = false;
   addEventListener('pointermove', e => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; }, { passive: true });
@@ -67,6 +68,20 @@ export function createStage(canvas, { onProgress } = {}) {
     p.wide = Math.min(1.8, Math.max(1, (p.fit * W) / (d * p.size * H)));
     p.y = -model.userData.cupY * p.size + (p.fitY || 0);
   }
+  // pose dengan "anchor": headphone menempel ke sebuah elemen (tombol pre-order). Ukuran earcup dihitung dari
+  // ukuran tombol, earcup mengapit tombol, dan posisinya ikut tombol saat halaman di-scroll.
+  function applyAnchor(p) {
+    if (!(p.anchor >= 0.5) || !anchorFn || !model) return false;
+    const a = anchorFn(); if (!a) return false;
+    const u = model.userData, hpx = innerHeight;
+    const ppu = Math.min(1.5 * a.r / u.cupH, 0.58 * hpx);           // px per satuan model (tinggi model = 1); earcup setinggi 3/4 tombol
+    p.size = ppu / hpx;
+    const off = a.r * 2.1 + u.cupHalfW * ppu;                         // tengah earcup dari tengah tombol, sisa ruang untuk gelombang
+    p.wide = Math.min(3, Math.max(1, off / (u.cupDist * ppu)));
+    p.x = (a.cx - innerWidth / 2) / innerWidth;
+    p.y = -(a.cy - hpx / 2) / hpx - u.cupY * p.size;
+    return true;
+  }
   const _v = new THREE.Vector3(), _b = new THREE.Box3();
   // kotak earcup kiri & kanan di layar (px CSS, tanpa transform halaman)
   function cups() {
@@ -89,8 +104,10 @@ export function createStage(canvas, { onProgress } = {}) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (!running) return;
     const k = calm.matches ? 1 : 1 - Math.exp(-dt * 8.5);
-    applyFit(tgt);
+    const anchored = applyAnchor(tgt);
+    if (!anchored) applyFit(tgt);
     for (const key of ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'wide']) cur[key] = ease(cur[key], tgt[key], k);
+    if (anchored) for (const key of ['x', 'y', 'size', 'wide']) cur[key] = tgt[key];   // langsung menempel, tidak tertinggal saat scroll
     cur.light = ease(cur.light, tgt.light, calm.matches ? 1 : 1 - Math.exp(-dt * 1.15));
     if (spin && !calm.matches) spinAngle += spin * dt;
     else if (!spin && !dragging) { const home = Math.round(spinAngle / (Math.PI * 2)) * Math.PI * 2; spinAngle = ease(spinAngle, home, 1 - Math.exp(-dt * 2)); }
@@ -103,10 +120,10 @@ export function createStage(canvas, { onProgress } = {}) {
 
     const H = visH(), W = visW();
     // headphone
-    hp.position.set(cur.x * W, cur.y * H + (calm.matches ? 0 : Math.sin(now / 900) * 0.03 * cur.size * H), 0);
+    hp.position.set(cur.x * W, cur.y * H + (calm.matches || anchored ? 0 : Math.sin(now / 900) * 0.03 * cur.size * H), 0);
     hp.scale.setScalar(Math.max(cur.size * H, 0.0001) * cur.op);
     hp.visible = cur.op > 0.01;
-    const calmTilt = 1 / (cur.wide * cur.wide);   // saat headband dilebarkan, parallax dikecilkan supaya tetap simetris
+    const calmTilt = anchored ? 0.12 : 1 / (cur.wide * cur.wide);   // saat headband dilebarkan, parallax dikecilkan supaya tetap simetris
     tilt.rotation.set(cur.rx + my * 0.12 * calmTilt, cur.ry + spinAngle + mx * 0.25 * calmTilt, cur.rz);
     model?.userData.setWide?.(cur.wide);
 
@@ -130,8 +147,9 @@ export function createStage(canvas, { onProgress } = {}) {
   return {
     ready,
     setVariant,
-    pose(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; },
-    jump(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; applyFit(tgt); Object.assign(cur, tgt); },
+    pose(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; tgt.anchor = p.anchor || 0; },
+    jump(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; tgt.anchor = p.anchor || 0; if (!applyAnchor(tgt)) applyFit(tgt); Object.assign(cur, tgt); },
+    setAnchor(fn) { anchorFn = fn; },
     cups,
     setSpin(v) { spin = v; },
     addYaw(d) { spinAngle += d; },

@@ -108,6 +108,8 @@ export async function loadHeadphone(mats, onProgress) {
   holder.add(flat);
   holder.userData.cupDist = d * k;
   holder.userData.cupY = (cupC.y - center.y) * k;
+  holder.userData.cupH = cupBox.getSize(new THREE.Vector3()).y * k;
+  holder.userData.cupHalfW = new THREE.Box3().setFromObject(cupG[1]).getSize(new THREE.Vector3()).z / 2 * k;
   holder.userData.cups = [cupG[-1], cupG[1]];
   let wideNow = 1;
   // f = 1 normal; f > 1 headband melebar dari tengah dan kedua earcup bergeser keluar sejauh ujung headband
