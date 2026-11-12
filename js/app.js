@@ -124,7 +124,7 @@ const POSES = {
     reviews: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     faq: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     track: { x: 0.33, y: 0.3, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
-    preorder: { x: 0, y: 0.42, size: 1.12, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1.95 },
+    preorder: { x: 0, y: 0, size: 0.9, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.3 },  // fit: earcup mengapit tombol, sejajar gelombang
   },
   mobile: {
     hero: { x: 0, y: 0.06, size: 0.4, rx: 0.16, ry: 0.72, rz: -0.06, op: 1, spread: 0, wide: 1 },
@@ -136,13 +136,13 @@ const POSES = {
     reviews: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     faq: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
     track: { x: 0, y: 0.25, size: 0.3, rx: 0.2, ry: 1.2, rz: 0, op: 0, spread: 1, wide: 1 },
-    preorder: { x: 0, y: 0.16, size: 0.5, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1.35 },
+    preorder: { x: 0, y: 0, size: 0.4, rx: 0, ry: FRONT, rz: 0, op: 1, spread: 1, wide: 1, fit: 0.37 },
   },
 };
 // transisi whip-pan (kamera menyapu melewati tebing) saat pindah antara bagian ini, ke dua arah
 const WIPES = new Set(['hero|specs', 'specs|materials', 'materials|colors', 'colors|tech', 'faq|preorder', 'track|preorder']);
 const isWipe = (x, y) => WIPES.has(`${x}|${y}`) || WIPES.has(`${y}|${x}`);
-const KEYS = ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'spread', 'wide'];
+const KEYS = ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'spread', 'wide', 'fit'];
 const WHIP_MS = 1000;
 const smooth = t => t * t * (3 - 2 * t);
 let lastIndex = 0, shown = '';
@@ -268,7 +268,7 @@ function choreograph() {
   else {
     const pa = tbl[A], pb = tbl[B], k = smooth(Math.min(1, Math.max(0, (t - 0.15) / 0.7)));
     pose = {};
-    KEYS.forEach(key => { pose[key] = pa[key] + (pb[key] - pa[key]) * k; });
+    KEYS.forEach(key => { const u = pa[key] ?? 0, v = pb[key] ?? 0; pose[key] = u + (v - u) * k; });
   }
   stage?.pose(pose);
   if (!document.body.classList.contains('whipping')) $('#rocks').style.setProperty('--spread', pose.spread.toFixed(3));
@@ -325,7 +325,7 @@ function setupDrag() {
 
 /* ---------------- animasi kanvas 2D ---------------- */
 function setupWaves() {
-  const c = $('#waves'), g = c.getContext('2d'); let on = false, raf = 0;
+  const c = $('#waves'), g = c.getContext('2d'); let on = false, raf = 0, baseLeft = 0, baseTop = 0, wx0 = null, wx1 = null, wcy = null;
   const io = new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on && !raf) raf = requestAnimationFrame(draw); });
   io.observe(c);
   function draw(now) {
@@ -333,13 +333,24 @@ function setupWaves() {
     const dpr = Math.min(devicePixelRatio || 1, 2), w = c.clientWidth, h = c.clientHeight;
     if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-    const t = calm.matches ? 0 : now / 1000, lines = 26, x0 = w * 0.2, x1 = w * 0.8;
+    // ujung gelombang menempel ke sisi dalam kedua earcup (kalau 3D aktif), selain itu 20%–80% lebar
+    let tx0 = w * 0.2, tx1 = w * 0.8, tcy = h / 2;
+    const cups = stage && document.body.classList.contains('has3d') ? stage.cups() : null;
+    if (!document.body.classList.contains('whipping')) baseLeft = c.getBoundingClientRect().left, baseTop = c.getBoundingClientRect().top;
+    if (cups && cups.length === 2 && cups[1].x0 - cups[0].x1 > 80) {
+      const ovL = (cups[0].x1 - cups[0].x0) * 0.22, ovR = (cups[1].x1 - cups[1].x0) * 0.22;   // masuk sedikit ke bantalan earcup
+      tx0 = cups[0].x1 - ovL - baseLeft; tx1 = cups[1].x0 + ovR - baseLeft;
+      tcy = Math.min(h * 0.7, Math.max(h * 0.3, (cups[0].y0 + cups[0].y1 + cups[1].y0 + cups[1].y1) / 4 - baseTop));
+    }
+    const kk = wx0 == null ? 1 : 0.2;
+    wx0 = wx0 == null ? tx0 : wx0 + (tx0 - wx0) * kk; wx1 = wx1 == null ? tx1 : wx1 + (tx1 - wx1) * kk; wcy = wcy == null ? tcy : wcy + (tcy - wcy) * kk;
+    const t = calm.matches ? 0 : now / 1000, lines = 26, x0 = wx0, x1 = wx1;
     for (let i = 0; i < lines; i++) {
       const p = i / (lines - 1);
       g.beginPath();
       for (let x = x0; x <= x1; x += 6) {
         const u = (x - x0) / (x1 - x0), env = Math.sin(u * Math.PI);
-        const y = h / 2 + env * (Math.sin(u * 9 + t * 1.3 + p * 2.2) * h * 0.22 + Math.sin(u * 4 - t * 0.7 + p * 5) * h * 0.12) * (0.4 + p * 0.6);
+        const y = wcy + env * (Math.sin(u * 9 + t * 1.3 + p * 2.2) * h * 0.22 + Math.sin(u * 4 - t * 0.7 + p * 5) * h * 0.12) * (0.4 + p * 0.6);
         x === x0 ? g.moveTo(x, y) : g.lineTo(x, y);
       }
       g.strokeStyle = `rgba(47, 91, 60, ${0.25 + p * 0.45})`; g.lineWidth = 0.9; g.stroke();

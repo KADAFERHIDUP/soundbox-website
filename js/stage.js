@@ -35,7 +35,7 @@ export function createStage(canvas, { onProgress } = {}) {
   hp.add(tilt); scene.add(hp);
   let model = null;
 
-  const cur = { x: 0, y: 0, size: 0.7, rx: 0.2, ry: 0.9, rz: 0, light: 0, op: 1, wide: 1 };
+  const cur = { x: 0, y: 0, size: 0.7, rx: 0.2, ry: 0.9, rz: 0, light: 0, op: 1, wide: 1, fit: 0 };
   const tgt = { ...cur };
   let spin = 0, spinAngle = 0, mx = 0, my = 0, dragging = false;
   addEventListener('pointermove', e => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; }, { passive: true });
@@ -59,11 +59,37 @@ export function createStage(canvas, { onProgress } = {}) {
   let last = performance.now(), running = true;
   const ease = (a, b, k) => a + (b - a) * k;
 
+  // pose dengan "fit": headband dilebarkan sampai tengah earcup berada fit x lebar layar dari tengah,
+  // dan earcup diletakkan tepat di tengah layar secara vertikal (sejajar tombol pre-order dan gelombang suara)
+  function applyFit(p) {
+    if (!p.fit || !model) return;
+    const d = model.userData.cupDist, H = visH(), W = visW();
+    p.wide = Math.min(3.2, Math.max(1, (p.fit * W) / (d * p.size * H)));
+    p.y = -model.userData.cupY * p.size + (p.fitY || 0);
+  }
+  const _v = new THREE.Vector3(), _b = new THREE.Box3();
+  // kotak earcup kiri & kanan di layar (px CSS, tanpa transform halaman)
+  function cups() {
+    if (!model || !hp.visible) return null;
+    hp.updateMatrixWorld(true);
+    return model.userData.cups.map(g => {
+      _b.setFromObject(g);
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      for (let i = 0; i < 8; i++) {
+        _v.set(i & 1 ? _b.max.x : _b.min.x, i & 2 ? _b.max.y : _b.min.y, i & 4 ? _b.max.z : _b.min.z).project(camera);
+        const x = (_v.x + 1) / 2 * innerWidth, y = (1 - _v.y) / 2 * innerHeight;
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+      return { x0, x1, y0, y1 };
+    }).sort((a, b) => a.x0 - b.x0);
+  }
+
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (!running) return;
     const k = calm.matches ? 1 : 1 - Math.exp(-dt * 8.5);
+    applyFit(tgt);
     for (const key of ['x', 'y', 'size', 'rx', 'ry', 'rz', 'op', 'wide']) cur[key] = ease(cur[key], tgt[key], k);
     cur.light = ease(cur.light, tgt.light, calm.matches ? 1 : 1 - Math.exp(-dt * 1.15));
     if (spin && !calm.matches) spinAngle += spin * dt;
@@ -80,7 +106,8 @@ export function createStage(canvas, { onProgress } = {}) {
     hp.position.set(cur.x * W, cur.y * H + (calm.matches ? 0 : Math.sin(now / 900) * 0.03 * cur.size * H), 0);
     hp.scale.setScalar(Math.max(cur.size * H, 0.0001) * cur.op);
     hp.visible = cur.op > 0.01;
-    tilt.rotation.set(cur.rx + my * 0.12, cur.ry + spinAngle + mx * 0.25, cur.rz);
+    const calmTilt = 1 / (cur.wide * cur.wide);   // saat headband dilebarkan, parallax dikecilkan supaya tetap simetris
+    tilt.rotation.set(cur.rx + my * 0.12 * calmTilt, cur.ry + spinAngle + mx * 0.25 * calmTilt, cur.rz);
     model?.userData.setWide?.(cur.wide);
 
     // cahaya: intro gelap -> terang
@@ -103,8 +130,9 @@ export function createStage(canvas, { onProgress } = {}) {
   return {
     ready,
     setVariant,
-    pose(p) { Object.assign(tgt, p); },
-    jump(p) { Object.assign(tgt, p); Object.assign(cur, p); },
+    pose(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; },
+    jump(p) { Object.assign(tgt, p); tgt.fit = p.fit || 0; applyFit(tgt); Object.assign(cur, tgt); },
+    cups,
     setSpin(v) { spin = v; },
     addYaw(d) { spinAngle += d; },
     setDragging(v) { dragging = v; },

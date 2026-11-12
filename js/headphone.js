@@ -83,29 +83,40 @@ export async function loadHeadphone(mats, onProgress) {
     flat.attach(m);
   }
   flat.updateMatrixWorld(true);
+  const all = new THREE.Box3().setFromObject(flat);
+  const size = all.getSize(new THREE.Vector3()), center = all.getCenter(new THREE.Vector3());
+  // tiap mesh dikelompokkan: headband (tengah) dan earcup kiri/kanan, diukur dari titik tengah model
+  const bandG = new THREE.Group(), cupG = { '-1': new THREE.Group(), '1': new THREE.Group() };
+  bandG.position.set(0, 0, center.z);
+  flat.add(bandG, cupG[-1], cupG[1]); flat.updateMatrixWorld(true);
+  const cupBox = new THREE.Box3();
   for (const m of meshes) {
     box.setFromObject(m).getCenter(c);
     const part = partOf(m.name);
-    m.userData.side = part === 'band' || part === 'pad' ? 0 : Math.sign(c.z);
-    m.userData.p0 = m.position.clone(); m.userData.s0 = m.scale.clone();
+    if (part === 'band' || part === 'pad') bandG.attach(m);
+    else { cupG[c.z < center.z ? -1 : 1].attach(m); cupBox.union(box); }
   }
-  const all = new THREE.Box3().setFromObject(flat);
-  const size = all.getSize(new THREE.Vector3()), center = all.getCenter(new THREE.Vector3());
+  // jarak tengah earcup ke tengah model dan tinggi tengah earcup (dihitung sebelum model diskalakan)
+  flat.updateMatrixWorld(true);
+  const cupC = cupBox.getCenter(new THREE.Vector3());
+  const half = s => new THREE.Box3().setFromObject(cupG[s]).getCenter(new THREE.Vector3()).z;
+  const d = (Math.abs(half(-1) - center.z) + Math.abs(half(1) - center.z)) / 2;
   const k = 1 / size.y;
   flat.scale.setScalar(k);
   flat.position.copy(center).multiplyScalar(-k);
   const holder = new THREE.Group();
   holder.add(flat);
+  holder.userData.cupDist = d * k;
+  holder.userData.cupY = (cupC.y - center.y) * k;
+  holder.userData.cups = [cupG[-1], cupG[1]];
   let wideNow = 1;
-  // f = 1 normal; f > 1 headband lebih lebar dan kedua earcup bergeser keluar
+  // f = 1 normal; f > 1 headband melebar dari tengah dan kedua earcup bergeser keluar sejauh ujung headband
   holder.userData.setWide = f => {
     if (Math.abs(f - wideNow) < 1e-4) return;
     wideNow = f;
-    for (const m of meshes) {
-      const { side, p0, s0 } = m.userData;
-      if (side === 0) { m.position.z = p0.z * f; m.scale.z = s0.z * f; }
-      else m.position.z = p0.z + side * (f - 1) * 1.75;
-    }
+    bandG.scale.z = f;
+    cupG[-1].position.z = -(f - 1) * d;
+    cupG[1].position.z = (f - 1) * d;
   };
   return holder;
 }
