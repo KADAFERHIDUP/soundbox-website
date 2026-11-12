@@ -1,6 +1,6 @@
 # Soundbox S9
 
-Website headphone full 3D, dibuat oleh **Ahmad Umraithi**. Konsepnya mengikuti video referensi: kertas abu kehijauan, foto tebing batu pasir di kiri-kanan, headphone 3D melayang di tengah, kata besar bergaya coretan di belakangnya, huruf grotesk dengan tulisan tangan oranye, dan sapuan batu yang buram (motion blur) saat pindah bagian.
+Website headphone full 3D, dibuat oleh **Ahmad Umraithi**. Konsepnya mengikuti video referensi: kertas abu kehijauan, foto tebing batu pasir di kiri-kanan, headphone 3D melayang di tengah, kata besar bergaya coretan di belakangnya, huruf grotesk dengan tulisan tangan oranye, dan transisi whip-pan: kamera menyapu cepat ke samping melewati tebing, komposisi berganti saat layar tertutup batu, lalu teks muncul bertahap.
 
 Online di **https://soundbox.kadaferhidup.my.id** (GitHub Pages).
 
@@ -28,7 +28,7 @@ Headphone memakai model [“JBL Headphone (changeable colour)”](https://sketch
 - Material diganti (kulit sintetis bertekstur, kain rajut, logam), warnanya dibuat per bagian untuk 7 varian.
 - Disederhanakan dari 164 ribu menjadi 61 ribu segitiga: file 5,2 MB menjadi 1,3 MB.
 
-Tebing batu memakai foto ngarai yang disediakan pemilik website; langitnya sudah dihapus dan fotonya dipertajam (`img/rock-left.webp`, `img/rock-right.webp`, `img/rock-blur.webp` untuk transisi). Pastikan foto itu boleh dipakai.
+Tebing batu memakai foto ngarai yang disediakan pemilik website; langitnya sudah dihapus dan fotonya dipertajam (`img/rock-left.webp`, `img/rock-right.webp`, `img/rock-strip.webp` untuk tekstur sapuan). Pastikan foto itu boleh dipakai.
 
 ## Mengubah isi
 
