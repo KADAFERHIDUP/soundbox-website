@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Soundbox S9 · Experience the next level in sound</title>
+  <meta name="description" content="Soundbox S9: headphone wireless modular dengan ANC hibrida, baterai 60 jam, dan 7 pilihan warna. Lihat dalam 3D lalu pre-order sekarang.">
+  <meta name="theme-color" content="#e7e5de">
+  <meta property="og:title" content="Soundbox S9 · Pre-order dibuka">
+  <meta property="og:description" content="Headphone modular dengan 7 warna. Lihat dalam 3D lalu pre-order.">
+  <meta property="og:image" content="img/variants/sand.webp">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Permanent+Marker&family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="modulepreload" href="vendor/three.module.js">
+  <link rel="preload" href="models/soundbox-s9.glb" as="fetch" crossorigin>
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+</head>
+<body class="intro">
+  <a class="skip" href="#warna">Langsung ke pilihan warna</a>
+
+  <!-- layar pembuka -->
+  <div class="loader" id="loader" aria-live="polite">
+    <div class="loader-in">
+      <span class="loader-brand">soundbox<sup>®</sup></span>
+      <span class="loader-bar"><i id="loader-bar"></i></span>
+      <span class="loader-pct" id="loader-pct">0%</span>
+    </div>
+  </div>
+
+  <!-- kanvas 3D dan kata latar -->
+  <div class="backdrop" aria-hidden="true">
+    <span class="bigword" id="bigword">dope</span>
+  </div>
+  <canvas id="gl" class="gl" aria-hidden="true"></canvas>
+  <div class="blur-wipe" id="wipe" aria-hidden="true"></div>
+
+  <!-- bingkai garis seperti di video -->
+  <div class="frame" aria-hidden="true">
+    <i class="v l"></i><i class="v r"></i><i class="h t"></i><i class="h b"></i>
+    <i class="dots d1"></i><i class="dots d2"></i><i class="dots d3"></i><i class="dots d4"></i>
+  </div>
+
+  <!-- navigasi -->
+  <header class="top">
+    <a class="round logo" href="#top" aria-label="Soundbox, ke atas">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="18.5" cy="13.5" r="1.8" fill="currentColor"/></svg>
+    </a>
+    <nav class="pill" aria-label="Aksi utama">
+      <button type="button" data-open="preorder">buy</button>
+      <button type="button" data-open="waitlist">waitlist</button>
+      <button type="button" class="pill-menu" id="menu-btn" aria-expanded="false" aria-controls="menu">menu</button>
+    </nav>
+    <button class="round sound" type="button" id="sound-btn" aria-pressed="false" aria-label="Nyalakan suara">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path class="wave1" d="M15.5 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="wave2" d="M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="mute" d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+
+  <!-- menu besar -->
+  <div class="menu" id="menu" hidden>
+    <nav aria-label="Navigasi halaman">
+      <a href="#top"><small>01</small>Beranda</a>
+      <a href="#fitur"><small>02</small>Spesifikasi</a>
+      <a href="#material"><small>03</small>Material</a>
+      <a href="#warna"><small>04</small>Pilih warna</a>
+      <a href="#teknologi"><small>05</small>Teknologi</a>
+      <a href="#edisi"><small>06</small>Edisi &amp; isi kotak</a>
+      <a href="#ulasan"><small>07</small>Ulasan</a>
+      <a href="#faq"><small>08</small>Tanya jawab</a>
+      <a href="#preorder"><small>09</small>Pre-order</a>
+      <a href="#lacak" class="online-only"><small>10</small>Lacak pesanan</a>
+    </nav>
+    <p class="menu-foot">Soundbox S9 · <span data-price-text></span> · pre-order dibuka</p>
+  </div>
+
+  <main id="top">
+    <!-- 1. HERO -->
+    <section class="scene hero" id="hero" data-scene="hero" data-word="dope">
+      <button class="glass sound-pill" type="button" data-sound>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M15.5 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span>click to enable sound</span>
+      </button>
+      <div class="model-card">
+        <p class="model-name"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>S9</p>
+        <ul class="mono">
+          <li>// 4 unit speaker</li>
+          <li>// 7 pilihan warna</li>
+          <li>// 2 kabel</li>
+          <li>// 1 headband modular</li>
+        </ul>
+        <ul class="mono bottom-list"><li>// identitas yang unik</li><li>// fungsi tanpa kompromi</li></ul>
+      </div>
+      <h1 class="headline">
+        <span>Experience the next</span>
+        <span class="indent"><em class="script">level</em> in sound<b>.</b></span>
+      </h1>
+      <p class="scroll-hint mono"><span></span>scroll untuk menjelajah</p>
+      <img class="still" src="img/variants/sand.webp" alt="Soundbox S9 warna Sand" width="900" height="900">
+    </section>
+
+    <!-- 2. SPESIFIKASI -->
+    <section class="scene specs" id="fitur" data-scene="specs" data-word="swag">
+      <div class="side-list">
+        <h2 class="label">Specifications<b>.</b></h2>
+        <ol class="mono icon-list">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span>[0/1]</span> Level suara baru</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>[0/2]</span> Mikrofon baru</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10-5 4V3l5 4L7 17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span>[0/3]</span> Modul Bluetooth 5.3</li>
+        </ol>
+        <p class="mono small">// Modularitas bukan hal baru, tapi kami memastikan ia sesederhana mungkin: cangkang, bantalan, dan headband bisa dilepas tanpa alat khusus.</p>
+      </div>
+      <dl class="stats">
+        <div><dt>Baterai</dt><dd>60<small>jam</small></dd></div>
+        <div><dt>Peredam bising</dt><dd>−35<small>dB</small></dd></div>
+        <div><dt>Berat</dt><dd>248<small>g</small></dd></div>
+      </dl>
+      <h2 class="headline">
+        <span>The <em class="script">controls</em> <span class="push">are</span></span>
+        <span>embedded within as well<b>.</b></span>
+      </h2>
+    </section>
+
+    <!-- 3. MATERIAL -->
+    <section class="scene materials" id="material" data-scene="materials" data-word="trill">
+      <div class="side-list">
+        <h2 class="label">Materials<b>.</b></h2>
+        <ol class="mono icon-list">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l3 5h-6zM5 19l-2-5 5-1M19 19l2-5-5-1M7.5 13l-2.5 6h14l-2.5-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span>[0/1]</span> Plastik daur ulang</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7c4-3 12-3 16 0v10c-4 3-12 3-16 0z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 9.5v5M12 9v6M16 9.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>[0/2]</span> Kulit sintetis ramah lingkungan</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 10h18M3 15h18M3 20h18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/></svg><span>[0/3]</span> Kain rajut headband</li>
+        </ol>
+        <p class="mono small">// 72% bagian cangkang memakai plastik daur ulang. Kemasan tanpa plastik, dicetak dengan tinta kedelai.</p>
+      </div>
+      <h2 class="headline">
+        <span><em class="script">ecological</em> <span class="push">materials</span></span>
+        <span>nature was not harmed<b>.</b></span>
+      </h2>
+    </section>
+
+    <!-- 4. WARNA -->
+    <section class="scene colors" id="warna" data-scene="colors" data-word="fresh">
+      <div class="color-panel">
+        <h2 class="label">Pick your colour<b>.</b></h2>
+        <p class="mono small">// Ketuk warna untuk melihatnya di headphone. Putar headphone dengan menggeser layar.</p>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Pilih warna"></div>
+        <div class="color-info" aria-live="polite">
+          <p class="color-name" id="color-name">Sand</p>
+          <p class="mono small" id="color-note"></p>
+          <p class="mono small stock" id="color-stock"></p>
+        </div>
+        <button class="btn dark" type="button" data-open="preorder" id="color-buy">Pre-order warna ini</button>
+      </div>
+      <div class="drag-zone" id="drag-zone" aria-hidden="true"></div>
+      <h2 class="headline">
+        <span>Seven <em class="script">shades</em></span>
+        <span class="indent">one sound<b>.</b></span>
+      </h2>
+    </section>
+
+    <!-- 5. TEKNOLOGI -->
+    <section class="sec tech" id="teknologi" data-scene="tech" data-word="vibe">
+      <header class="sec-head">
+        <p class="mono">[05] teknologi</p>
+        <h2 class="headline"><span>Built for <em class="script">long</em></span><span class="indent">listening<b>.</b></span></h2>
+      </header>
+      <div class="tech-grid">
+        <article class="card">
+          <canvas class="eq" id="eq" width="600" height="220" aria-hidden="true"></canvas>
+          <h3>ANC hibrida</h3>
+          <p>Empat mikrofon membaca bising dari luar dan dalam, lalu meredamnya hingga −35 dB. Mode transparansi memasukkan suara sekitar saat kamu perlu mendengar.</p>
+        </article>
+        <article class="card">
+          <div class="battery" aria-hidden="true"><i></i></div>
+          <h3>Baterai 60 jam</h3>
+          <p>Isi 10 menit untuk 5 jam pemakaian. Dari Lhokseumawe ke Medan pulang-pergi pun belum habis.</p>
+        </article>
+        <article class="card">
+          <div class="pairs" aria-hidden="true"><span></span><span></span></div>
+          <h3>Multipoint</h3>
+          <p>Tersambung ke HP dan laptop sekaligus. Telepon masuk langsung pindah tanpa putus musik.</p>
+        </article>
+        <article class="card wide">
+          <h3>Spesifikasi lengkap</h3>
+          <dl class="spec-table" id="spec-table"></dl>
+        </article>
+      </div>
+    </section>
+
+    <!-- 6. EDISI -->
+    <section class="sec editions" id="edisi" data-scene="editions" data-word="drip">
+      <header class="sec-head">
+        <p class="mono">[06] edisi &amp; isi kotak</p>
+        <h2 class="headline"><span>Choose your <em class="script">kit</em></span></h2>
+      </header>
+      <div class="edition-grid" id="edition-grid"></div>
+      <div class="parts">
+        <h3 class="label">Suku cadang<b>.</b></h3>
+        <p class="mono small">// Semua bagian bisa diganti sendiri. Suku cadang dikirim bersama pesanan atau menyusul.</p>
+        <ul class="part-list mono">
+          <li><span>Bantalan telinga (sepasang)</span><b>Rp 249.000</b></li>
+          <li><span>Headband rajut</span><b>Rp 199.000</b></li>
+          <li><span>Cangkang warna lain (sepasang)</span><b>Rp 349.000</b></li>
+          <li><span>Hard case</span><b>Rp 229.000</b></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 7. ULASAN -->
+    <section class="sec reviews" id="ulasan" data-scene="reviews" data-word="real">
+      <header class="sec-head">
+        <p class="mono">[07] ulasan</p>
+        <h2 class="headline"><span>Words from <em class="script">early</em></span><span class="indent">listeners<b>.</b></span></h2>
+      </header>
+      <div class="review-wrap">
+        <div class="review-summary" id="review-summary"></div>
+        <div class="review-list" id="review-list"></div>
+        <form class="card review-form online-only" id="review-form" novalidate>
+          <h3>Tulis ulasan</h3>
+          <p class="small">Khusus pembeli: masukkan kode pre-order dan nomor WhatsApp yang dipakai saat memesan. Ulasan tampil setelah dicek admin.</p>
+          <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="row2">
+            <label>Kode pre-order<input name="code" required placeholder="SB-261112-XXXX" autocomplete="off"></label>
+            <label>Nomor WhatsApp<input name="phone" type="tel" inputmode="tel" required placeholder="08xx"></label>
+          </div>
+          <fieldset class="stars-input"><legend>Nilai</legend>
+            <label><input type="radio" name="rating" value="5" checked><span>5</span></label>
+            <label><input type="radio" name="rating" value="4"><span>4</span></label>
+            <label><input type="radio" name="rating" value="3"><span>3</span></label>
+            <label><input type="radio" name="rating" value="2"><span>2</span></label>
+            <label><input type="radio" name="rating" value="1"><span>1</span></label>
+          </fieldset>
+          <label>Ulasan<textarea name="body" rows="3" required maxlength="600" placeholder="Bagaimana suaranya? Nyaman dipakai lama?"></textarea></label>
+          <p class="form-error" role="alert" hidden></p>
+          <p class="form-ok" role="status" hidden></p>
+          <button class="btn dark" type="submit">Kirim ulasan</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 8. FAQ -->
+    <section class="sec faq" id="faq" data-scene="faq" data-word="ask">
+      <header class="sec-head">
+        <p class="mono">[08] tanya jawab</p>
+        <h2 class="headline"><span>Good <em class="script">questions</em></span></h2>
+      </header>
+      <div class="faq-list" id="faq-list"></div>
+    </section>
+
+    <!-- 9. LACAK -->
+    <section class="sec track online-only" id="lacak" data-scene="track" data-word="soon">
+      <header class="sec-head">
+        <p class="mono">[10] lacak pesanan</p>
+        <h2 class="headline"><span>Where is my <em class="script">pair</em>?</span></h2>
+      </header>
+      <form class="card track-form" id="track-form" novalidate>
+        <div class="row2">
+          <label>Kode pre-order<input name="code" required placeholder="SB-261112-XXXX" autocomplete="off"></label>
+          <label>Nomor WhatsApp<input name="phone" type="tel" inputmode="tel" required placeholder="08xx"></label>
+        </div>
+        <p class="form-error" role="alert" hidden></p>
+        <button class="btn dark" type="submit">Lacak</button>
+        <div class="track-result" id="track-result" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <!-- 10. PRE-ORDER -->
+    <section class="scene preorder" id="preorder" data-scene="preorder" data-word="hype">
+      <p class="mono quote">// Ini bukan revolusi, tapi bukti bahwa modularitas bisa terjadi, dan bisa terjadi dengan cara yang paling sederhana.</p>
+      <canvas class="waves" id="waves" aria-hidden="true"></canvas>
+      <button class="po-disc" type="button" data-open="preorder" aria-label="Buka form pre-order">
+        <span class="script">pre</span><span class="po-word">order</span>
+      </button>
+      <p class="mono po-meta">// <span data-ship></span> produksi<br>// bayar penuh di muka</p>
+      <div class="po-bar">
+        <div class="po-price"><span class="mono">// harga<b>.</b></span><strong data-price-short></strong></div>
+        <span class="round small-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></span>
+        <div class="marquee" aria-hidden="true"><div class="marquee-track"><span>Pre-order is <em class="script">open</em></span><span>Pre-order is <em class="script">open</em></span><span>Pre-order is <em class="script">open</em></span><span>Pre-order is <em class="script">open</em></span><span>Pre-order is <em class="script">open</em></span><span>Pre-order is <em class="script">open</em></span></div></div>
+        <span class="round small-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 19c.8-3.5 3.2-5 6-5s5.2 1.5 6 5M15.5 6.5a3 3 0 0 1 0 5.6M18 14.5c1.6.7 2.6 2.2 3 4.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+        <div class="po-count"><span class="mono">// pemesan<b>.</b></span><strong id="order-count">—</strong></div>
+      </div>
+      <p class="sr-only">Pre-order dibuka. Harga mulai <span data-price-text></span>.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-grid">
+      <div>
+        <p class="foot-brand">soundbox<sup>®</sup></p>
+        <p class="small">Headphone modular dari Lhokseumawe. Dirancang supaya bisa diperbaiki, bukan dibuang.</p>
+      </div>
+      <div><h4 class="mono">// jelajahi</h4><ul><li><a href="#fitur">Spesifikasi</a></li><li><a href="#warna">Warna</a></li><li><a href="#edisi">Edisi</a></li><li><a href="#faq">Tanya jawab</a></li></ul></div>
+      <div><h4 class="mono">// kontak</h4><ul id="foot-contact"></ul></div>
+      <div><h4 class="mono">// kabar terbaru</h4><p class="small">Masuk waitlist untuk kabar stok dan warna baru.</p><button class="btn dark sm" type="button" data-open="waitlist">Gabung waitlist</button></div>
+    </div>
+    <div class="foot-note mono">
+      <p>Model 3D: <a id="credit-link" target="_blank" rel="noopener"></a> oleh <a id="credit-author" target="_blank" rel="noopener"></a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), diubah bentuk dan warnanya, logo dihapus. Tebing batu dibuat dari kode.</p>
+      <p>© <span id="year">2026</span> Soundbox · Dibuat oleh Ahmad Umraithi</p>
+    </div>
+  </footer>
+
+  <!-- indikator bagian -->
+  <p class="index mono" aria-hidden="true">[<span id="idx">0</span>/<span id="idx-total">9</span>]</p>
+
+  <!-- PRE-ORDER -->
+  <dialog class="sheet" id="preorder-sheet" aria-labelledby="po-title">
+    <form method="dialog" class="sheet-in" id="po-form" novalidate>
+      <header class="sheet-head">
+        <h2 id="po-title">Pre-order<b>.</b></h2>
+        <button class="x" type="button" data-close aria-label="Tutup">×</button>
+      </header>
+      <div class="sheet-body">
+        <div class="po-preview">
+          <img id="po-img" src="img/variants/sand.webp" alt="" width="900" height="900">
+          <div><p class="mono small">// warna</p><p class="po-variant" id="po-variant">Sand</p></div>
+        </div>
+        <fieldset class="seg swatch-seg" id="po-swatches"><legend>Warna</legend></fieldset>
+        <fieldset class="seg" id="po-editions"><legend>Edisi</legend></fieldset>
+        <label class="qty-row">Jumlah
+          <span class="qty"><button type="button" data-q="-1" aria-label="Kurangi">−</button><input name="qty" type="number" min="1" max="5" value="1" inputmode="numeric" aria-label="Jumlah"><button type="button" data-q="1" aria-label="Tambah">+</button></span>
+        </label>
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="row2">
+          <label>Nama<input name="name" autocomplete="name" required></label>
+          <label>Nomor WhatsApp<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="08xx"></label>
+        </div>
+        <label>Email (opsional)<input name="email" type="email" autocomplete="email" placeholder="untuk bukti pre-order"></label>
+        <label>Alamat pengiriman<textarea name="address" rows="2" autocomplete="street-address" required placeholder="Jalan, nomor, kecamatan"></textarea></label>
+        <label>Kota<input name="city" autocomplete="address-level2" required></label>
+        <fieldset class="seg" id="po-pay"><legend>Pembayaran</legend></fieldset>
+        <label>Catatan<textarea name="note" rows="2" placeholder="Opsional"></textarea></label>
+      </div>
+      <footer class="sheet-foot">
+        <div class="sum"><span>Total</span><strong id="po-total">Rp 0</strong></div>
+        <p class="small muted">Gratis ongkir ke seluruh Indonesia. Produksi <span data-ship></span> setelah pembayaran.</p>
+        <p class="form-error" id="po-error" role="alert" hidden></p>
+        <button class="btn dark block" type="submit" id="po-submit">Pre-order sekarang</button>
+      </footer>
+      <div class="done" id="po-done" hidden>
+        <span class="done-disc" aria-hidden="true">✓</span>
+        <h3>Pre-order tercatat</h3>
+        <p>Kode kamu <b id="po-code"></b></p>
+        <p class="small" id="po-done-text"></p>
+        <a class="btn dark block" id="po-wa" target="_blank" rel="noopener">Lanjut bayar lewat WhatsApp</a>
+        <button class="btn line block" type="button" data-close>Tutup</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- WAITLIST -->
+  <dialog class="sheet small-sheet" id="waitlist-sheet" aria-labelledby="wl-title">
+    <form method="dialog" class="sheet-in" id="wl-form" novalidate>
+      <header class="sheet-head">
+        <h2 id="wl-title">Waitlist<b>.</b></h2>
+        <button class="x" type="button" data-close aria-label="Tutup">×</button>
+      </header>
+      <div class="sheet-body">
+        <p class="small">Kami kabari lewat WhatsApp atau email saat batch berikutnya dibuka atau warna favoritmu kembali tersedia.</p>
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label>Nama<input name="name" autocomplete="name" required></label>
+        <label>WhatsApp atau email<input name="contact" required placeholder="08xx atau nama@email.com" autocomplete="email"></label>
+        <label>Warna yang diincar<select name="variant" id="wl-variant"></select></label>
+        <p class="form-error" role="alert" hidden></p>
+        <p class="form-ok" role="status" hidden></p>
+        <button class="btn dark block" type="submit">Gabung waitlist</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
