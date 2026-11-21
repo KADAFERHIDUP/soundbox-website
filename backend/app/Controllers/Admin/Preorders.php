@@ -92,7 +92,7 @@ class Preorders extends BaseController
         fwrite($out, "\xEF\xBB\xBF");
         fputcsv($out, ['Kode', 'Tanggal', 'Warna', 'Edisi', 'Jumlah', 'Total', 'Nama', 'WhatsApp', 'Email', 'Alamat', 'Kota', 'Bayar', 'Catatan', 'Status', 'Resi'], ';');
         foreach ($rows as $r) {
-            fputcsv($out, [$r['code'], $r['created_at'], $r['variant_name'], $r['edition_name'], $r['qty'], $r['total'], $r['name'], $r['phone'], $r['email'], $r['address'], $r['city'], $r['pay'], $r['note'], $cfg->statuses[$r['status']] ?? $r['status'], $r['tracking']], ';');
+            fputcsv($out, csv_safe([$r['code'], $r['created_at'], $r['variant_name'], $r['edition_name'], $r['qty'], $r['total'], $r['name'], $r['phone'], $r['email'], $r['address'], $r['city'], $r['pay'], $r['note'], $cfg->statuses[$r['status']] ?? $r['status'], $r['tracking']]), ';');
         }
         rewind($out);
 

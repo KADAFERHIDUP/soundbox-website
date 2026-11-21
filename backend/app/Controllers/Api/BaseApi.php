@@ -27,9 +27,15 @@ abstract class BaseApi extends BaseController
     /** true kalau IP ini masih boleh mengirim (default 8 kiriman per menit per endpoint). */
     protected function allowed(string $bucket, int $capacity = 8, int $seconds = MINUTE): bool
     {
-        $key = 'api-' . $bucket . '-' . md5((string) $this->request->getIPAddress());
+        $ip  = md5((string) $this->request->getIPAddress());
+        $key = 'api-' . $bucket . '-' . $ip;
 
-        return service('throttler')->check($key, $capacity, $seconds) !== false;
+        if (service('throttler')->check($key, $capacity, $seconds) === false) {
+            return false;
+        }
+
+        // batas harian: satu IP tidak bisa menghabiskan stok atau membanjiri admin dengan kiriman palsu
+        return service('throttler')->check('api-day-' . $bucket . '-' . $ip, $capacity * 6, DAY) !== false;
     }
 
     protected function tooMany(): ResponseInterface
