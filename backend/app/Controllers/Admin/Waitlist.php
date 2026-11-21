@@ -37,7 +37,7 @@ class Waitlist extends BaseController
         fwrite($out, "\xEF\xBB\xBF");
         fputcsv($out, ['Tanggal', 'Nama', 'Kontak', 'Warna', 'Sudah dikabari'], ';');
         foreach ($rows as $r) {
-            fputcsv($out, [$r['created_at'], $r['name'], $r['contact'], $r['variant'], $r['notified'] ? 'ya' : 'belum'], ';');
+            fputcsv($out, csv_safe([$r['created_at'], $r['name'], $r['contact'], $r['variant'], $r['notified'] ? 'ya' : 'belum']), ';');
         }
         rewind($out);
 

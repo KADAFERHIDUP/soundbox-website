@@ -34,7 +34,17 @@ php spark db:seed DatabaseSeeder
 php spark serve
 ```
 
-Buka http://localhost:8080 (website) dan http://localhost:8080/admin (admin). **Ganti `ADMIN_PASSWORD` di `.env` sebelum menjalankan seeder.** Kalau website diubah, jalankan installer lagi supaya `public/` ikut terbarui.
+Buka http://localhost:8080 (website) dan http://localhost:8080/admin (admin). **Isi `ADMIN_PASSWORD` di `.env` sebelum menjalankan seeder** (minimal 10 karakter, ada huruf dan angka). Kalau website diubah, jalankan installer lagi supaya `public/` ikut terbarui.
+
+## Pengamanan
+
+- Harga, total, dan stok selalu dihitung di server dari database. Angka kiriman browser tidak dipercaya.
+- Login admin dibatasi 5 percobaan per 5 menit per IP, dengan waktu respons yang sama untuk email terdaftar maupun tidak.
+- Semua kiriman API publik dibatasi per menit **dan** per hari per IP, supaya satu orang tidak bisa menghabiskan stok atau membanjiri admin dengan data palsu.
+- Tidak ada password admin bawaan. `ADMIN_PASSWORD` wajib minimal 10 karakter berisi huruf dan angka; kalau dikosongkan, password acak dibuat saat seeding. Password contoh lama (misalnya `admin12345`) ditolak saat login.
+- Ganti password admin kapan saja: `php spark admin:password`.
+- File CSV untuk admin aman dibuka di Excel: isi yang diawali `=`, `+`, `-`, atau `@` tidak dijalankan sebagai rumus.
+- Foto upload dicek isinya, diberi nama acak, dan folder upload menolak menjalankan skrip.
 
 ## Hosting
 
